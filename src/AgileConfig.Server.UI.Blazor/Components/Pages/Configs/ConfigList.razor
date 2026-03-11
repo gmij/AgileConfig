@@ -1,5 +1,6 @@
 @page "/configs/{AppId}/{AppName}"
 @inherits ConfigListBase
+@using AgileConfig.Server.UI.Blazor.Models
 
 <PageTitle>Configs - @AppName - AgileConfig</PageTitle>
 
@@ -18,14 +19,14 @@
 </div>
 
 <div class="page-content">
-    <Space Direction="DirectionVHType.Vertical" Style="width: 100%;" Size="@("middle")">
+    <Space Direction="@SpaceDirection.Vertical" Style="width: 100%;" Size="@("middle")">
         <SpaceItem>
             <Space>
                 @if (waitPublishStatus.AddCount > 0)
                 {
                     <SpaceItem>
                         <Badge Count="@waitPublishStatus.AddCount" OffsetX="-5">
-                            <Tag Color="blue">New</Tag>
+                            <Tag Color="@("blue")">New</Tag>
                         </Badge>
                     </SpaceItem>
                 }
@@ -33,7 +34,7 @@
                 {
                     <SpaceItem>
                         <Badge Count="@waitPublishStatus.EditCount" OffsetX="-5">
-                            <Tag Color="gold">Modified</Tag>
+                            <Tag Color="@("gold")">Modified</Tag>
                         </Badge>
                     </SpaceItem>
                 }
@@ -41,7 +42,7 @@
                 {
                     <SpaceItem>
                         <Badge Count="@waitPublishStatus.DeleteCount" OffsetX="-5">
-                            <Tag Color="red">Deleted</Tag>
+                            <Tag Color="@("red")">Deleted</Tag>
                         </Badge>
                     </SpaceItem>
                 }
@@ -120,13 +121,13 @@
                     @switch(context.EditStatus)
                     {
                         case 0:
-                            <Tag Color="blue">New</Tag>
+                            <Tag Color="@("blue")">New</Tag>
                             break;
                         case 1:
-                            <Tag Color="gold">Modified</Tag>
+                            <Tag Color="@("gold")">Modified</Tag>
                             break;
                         case 2:
-                            <Tag Color="red">Deleted</Tag>
+                            <Tag Color="@("red")">Deleted</Tag>
                             break;
                         case 10:
                             <Tag>Published</Tag>
@@ -139,11 +140,11 @@
                 <PropertyColumn Property="c => c.OnlineStatus" Title="Publish Status">
                     @if (context.OnlineStatus == 0)
                     {
-                        <Tag Color="warning">Wait Publish</Tag>
+                        <Tag Color="@("warning")">Wait Publish</Tag>
                     }
                     else
                     {
-                        <Tag Color="processing">Online</Tag>
+                        <Tag Color="@("processing")">Online</Tag>
                     }
                 </PropertyColumn>
                 <ActionColumn Title="Actions">

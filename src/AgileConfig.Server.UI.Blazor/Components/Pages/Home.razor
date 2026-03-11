@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inherits HomeBase
+@using AgileConfig.Server.UI.Blazor.Models
 
 <PageTitle>Home - AgileConfig</PageTitle>
 
@@ -8,7 +9,7 @@
 </div>
 
 <div class="page-content">
-    <Space Direction="DirectionVHType.Vertical" Size="@("large")" Style="width: 100%;">
+    <Space Direction="@SpaceDirection.Vertical" Size="@("large")" Style="width: 100%;">
         <SpaceItem>
             <Row Gutter="16">
                 <AntDesign.Col Span="6">
@@ -50,7 +51,7 @@
                                   Title="Connected Clients"
                                   Value="@statistics.ClientCount">
                             <PrefixTemplate>
-                                <Icon Type="@IconType.Outline.ApiOutlined" Style="color: #1890ff;" />
+                                <Icon Type="@IconType.Outline.Api" Style="color: #1890ff;" />
                             </PrefixTemplate>
                         </Statistic>
                     </Card>
@@ -87,7 +88,7 @@
                 }
                 else
                 {
-                    <Empty Description="No recently visited applications" />
+                    <Empty Description="@("No recently visited applications")" />
                 }
             </Card>
         </SpaceItem>
@@ -120,7 +121,7 @@
                         }
                         else
                         {
-                            <Empty Description="No server nodes" />
+                            <Empty Description="@("No server nodes")" />
                         }
                     </Card>
                 </AntDesign.Col>
@@ -147,7 +148,7 @@
                         }
                         else
                         {
-                            <Empty Description="No recent activities" />
+                            <Empty Description="@("No recent activities")" />
                         }
                     </Card>
                 </AntDesign.Col>

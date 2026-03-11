@@ -9,7 +9,7 @@
     <div class="history-container">
         @if (!historyData.Any())
         {
-            <Empty Description="No version history" />
+            <Empty Description="@("No version history")" />
         }
         else
         {
@@ -32,29 +32,31 @@
                                 </div>
                             </div>
                         </TitleTemplate>
-                        <PropertyColumn Property="c => c.Group" Title="Group" Ellipsis />
-                        <PropertyColumn Property="c => c.Key" Title="Key" Ellipsis />
-                        <PropertyColumn Property="c => c.Value" Title="Value" Ellipsis />
-                        <PropertyColumn Property="c => c.EditStatus" Title="Status">
-                            @switch(context.EditStatus)
-                            {
-                                case 0:
-                                    <Tag Color="blue">Add</Tag>
-                                    break;
-                                case 1:
-                                    <Tag Color="gold">Edit</Tag>
-                                    break;
-                                case 2:
-                                    <Tag Color="red">Delete</Tag>
-                                    break;
-                                case 10:
-                                    <Tag>Committed</Tag>
-                                    break;
-                                default:
-                                    <Tag>Unknown</Tag>
-                                    break;
-                            }
-                        </PropertyColumn>
+                        <ChildContent>
+                            <PropertyColumn Property="c => c.Group" Title="Group" Ellipsis />
+                            <PropertyColumn Property="c => c.Key" Title="Key" Ellipsis />
+                            <PropertyColumn Property="c => c.Value" Title="Value" Ellipsis />
+                            <PropertyColumn Property="c => c.EditStatus" Title="Status">
+                                @switch(context.EditStatus)
+                                {
+                                    case 0:
+                                        <Tag Color="@("blue")">Add</Tag>
+                                        break;
+                                    case 1:
+                                        <Tag Color="@("gold")">Edit</Tag>
+                                        break;
+                                    case 2:
+                                        <Tag Color="@("red")">Delete</Tag>
+                                        break;
+                                    case 10:
+                                        <Tag>Committed</Tag>
+                                        break;
+                                    default:
+                                        <Tag>Unknown</Tag>
+                                        break;
+                                }
+                            </PropertyColumn>
+                        </ChildContent>
                     </Table>
                     <div style="display: flex; justify-content: flex-end;">
                         <Button Type="@ButtonType.Primary"

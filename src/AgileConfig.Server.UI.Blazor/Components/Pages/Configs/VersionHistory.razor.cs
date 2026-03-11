@@ -60,7 +60,7 @@ public class VersionHistoryBase : ComponentBase
             Content = $"Are you sure to rollback to version published at {publishNode.TimelineNode.PublishTime:yyyy-MM-dd HH:mm:ss}?\n\nThis operation cannot be undone. All current configurations will be replaced with this version.",
             OkText = "Rollback",
             CancelText = "Cancel",
-            OkType = "danger"
+            OkButtonProps = new ButtonProps { Danger = true }
         });
 
         if (confirmResult)

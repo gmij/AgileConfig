@@ -1,5 +1,6 @@
 @page "/logs"
 @inherits LogListBase
+@using AgileConfig.Server.UI.Blazor.Models
 
 <PageTitle>System Logs - AgileConfig</PageTitle>
 
@@ -15,7 +16,7 @@
            @bind-PageSize="@pageSize"
            Total="@total">
         <PropertyColumn Property="l => l.LogType" Title="Type">
-            <Tag Color="blue">@context.LogType</Tag>
+            <Tag Color="@("blue")">@context.LogType</Tag>
         </PropertyColumn>
         <PropertyColumn Property="l => l.AppId" Title="App ID" />
         <PropertyColumn Property="l => l.LogTime" Title="Time">

@@ -23,7 +23,7 @@
             <MenuItem Key="nodes" RouterLink="/nodes" Icon="@IconType.Outline.Cluster">
                 Server Nodes
             </MenuItem>
-            <MenuItem Key="clients" RouterLink="/clients" Icon="@IconType.Outline.ApiOutlined">
+            <MenuItem Key="clients" RouterLink="/clients" Icon="@IconType.Outline.Api">
                 Clients
             </MenuItem>
             <SubMenu Key="system" Title="System" Icon="@IconType.Outline.Setting">
@@ -38,7 +38,7 @@
     </Sider>
     <Layout>
         <Header Style="background: #fff; padding: 0 24px; box-shadow: 0 1px 4px rgba(0,21,41,.08);">
-            <Row Justify="space-between" Align="middle">
+            <Row Justify="@RowJustify.SpaceBetween" Align="@RowAlign.Middle">
                 <AntDesign.Col>
                     <Breadcrumb>
                         <BreadcrumbItem>

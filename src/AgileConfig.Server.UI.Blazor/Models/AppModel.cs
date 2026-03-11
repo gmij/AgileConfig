@@ -127,3 +127,28 @@ public class ClientInfoModel
     public DateTime? LastHeartbeatTime { get; set; }
     public string Status { get; set; } = "Online";
 }
+
+public class PublishTimelineNode
+{
+    public string Id { get; set; } = "";
+    public DateTime? PublishTime { get; set; }
+    public string? PublishUserName { get; set; }
+    public string? Log { get; set; }
+}
+
+public class PublishDetailNode
+{
+    public PublishTimelineNode TimelineNode { get; set; } = new();
+    public List<ConfigModel> Configs { get; set; } = new();
+}
+
+public class QueryModel<T>
+{
+    public SortModel[]? SortModel { get; set; }
+}
+
+public class SortModel
+{
+    public string FieldName { get; set; } = "";
+    public string Sort { get; set; } = ""; // ascend, descend
+}
