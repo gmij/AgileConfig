@@ -1,0 +1,18 @@
+@inherits JsonImportBase
+
+<Modal Title="Import JSON"
+       @bind-Visible="@Visible"
+       OnOk="@HandleSubmit"
+       OnCancel="@HandleCancel"
+       Width="800"
+       ConfirmLoading="@saving">
+    <p>Import configurations from JSON format:</p>
+    <TextArea @bind-Value="@jsonContent"
+              Placeholder="Paste JSON content here"
+              AutoSize="new AutoSizeType { MinRows = 10, MaxRows = 20 }"
+              Style="font-family: monospace;" />
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <Alert Type="@AlertType.Error" Message="@errorMessage" Style="margin-top: 16px;" ShowIcon Closable />
+    }
+</Modal>

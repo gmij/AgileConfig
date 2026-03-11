@@ -1,0 +1,54 @@
+.page-header {
+    padding: 16px 24px;
+    background: #fff;
+    margin-bottom: 24px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.page-content {
+    padding: 0 24px 24px;
+}
+
+.app-list-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.app-list-item:last-child {
+    border-bottom: none;
+}
+
+.app-avatar {
+    margin-right: 16px;
+}
+
+.app-info {
+    flex: 1;
+}
+
+.app-title {
+    margin-bottom: 4px;
+}
+
+.app-link {
+    color: #1890ff;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.app-link:hover {
+    color: #40a9ff;
+}
+
+.app-description {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
