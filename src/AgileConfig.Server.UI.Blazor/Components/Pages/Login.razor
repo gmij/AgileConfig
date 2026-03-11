@@ -1,14 +1,13 @@
 @page "/login"
 @using AgileConfig.Server.UI.Blazor.Services
-@inject AuthenticationService AuthService
-@inject NavigationManager Navigation
+@inherits LoginBase
 
 <PageTitle>Login - AgileConfig</PageTitle>
 
 <div class="login-container">
-    <Card Title="AgileConfig Login" Style="width: 400px; margin: 100px auto;">
+    <Card Title="AgileConfig Login" Class="login-card">
         <Body>
-            <Form Model="@loginModel" OnFinish="OnFinish" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+            <Form Model="@loginModel" OnFinish="OnFinish" LabelColSpan="6" WrapperColSpan="18">
                 <FormItem Label="Username">
                     <Input @bind-Value="@context.Username" Placeholder="Enter username" />
                 </FormItem>
@@ -19,8 +18,8 @@
                 {
                     <Alert Type="@AlertType.Error" Message="@errorMessage" ShowIcon="true" Closable="true" />
                 }
-                <FormItem WrapperCol="new ColLayoutParam { Offset = 6, Span = 18 }">
-                    <Button Type="@ButtonType.Primary" HtmlType="submit" Loading="@isLoading" Style="width: 100%;">
+                <FormItem WrapperColOffset="6" WrapperColSpan="18">
+                    <Button Type="@ButtonType.Primary" HtmlType="submit" Loading="@isLoading" Block>
                         Login
                     </Button>
                 </FormItem>
@@ -28,55 +27,3 @@
         </Body>
     </Card>
 </div>
-
-@code {
-    private LoginModel loginModel = new();
-    private string? errorMessage;
-    private bool isLoading = false;
-
-    private async Task OnFinish()
-    {
-        isLoading = true;
-        errorMessage = null;
-        StateHasChanged();
-
-        try
-        {
-            var success = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
-
-            if (success)
-            {
-                Navigation.NavigateTo("/");
-            }
-            else
-            {
-                errorMessage = "Invalid username or password";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Login failed: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    public class LoginModel
-    {
-        public string Username { get; set; } = "admin";
-        public string Password { get; set; } = "";
-    }
-}
-
-<style>
-    .login-container {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-</style>
