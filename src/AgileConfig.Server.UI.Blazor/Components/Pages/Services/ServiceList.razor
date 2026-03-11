@@ -19,11 +19,11 @@
         <PropertyColumn Property="s => s.Status" Title="Status">
             @if (context.Status == "Healthy")
             {
-                <Badge Status="@PresetColor.Success.ToString()" Text="Healthy" />
+                <Badge Status="@BadgeStatus.Success" Text="Healthy" />
             }
             else
             {
-                <Badge Status="@PresetColor.Error.ToString()" Text="Unhealthy" />
+                <Badge Status="@BadgeStatus.Error" Text="Unhealthy" />
             }
         </PropertyColumn>
         <PropertyColumn Property="s => s.RegisterTime" Title="Register Time">

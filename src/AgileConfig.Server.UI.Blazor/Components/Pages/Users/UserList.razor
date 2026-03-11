@@ -27,18 +27,18 @@
             {
                 @foreach (var role in context.Roles)
                 {
-                    <Tag Color="blue">@role</Tag>
+                    <Tag Color="@("blue")">@role</Tag>
                 }
             }
         </PropertyColumn>
         <PropertyColumn Property="u => u.Enabled" Title="Status">
             @if (context.Enabled)
             {
-                <Badge Status="@PresetColor.Success.ToString()" Text="Enabled" />
+                <Badge Status="@BadgeStatus.Success" Text="Enabled" />
             }
             else
             {
-                <Badge Status="@PresetColor.Default.ToString()" Text="Disabled" />
+                <Badge Status="@BadgeStatus.Default" Text="Disabled" />
             }
         </PropertyColumn>
         <PropertyColumn Property="u => u.CreateTime" Title="Create Time">
@@ -86,9 +86,9 @@
                         @bind-Values="@formContext.Roles"
                         Mode="@SelectMode.Multiple"
                         Placeholder="Select roles">
-                    <SelectOption TItemValue="string" TItem="string" Value="SuperAdmin" Label="Super Admin" />
-                    <SelectOption TItemValue="string" TItem="string" Value="Administrator" Label="Administrator" />
-                    <SelectOption TItemValue="string" TItem="string" Value="Operator" Label="Operator" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("SuperAdmin")" Label="Super Admin" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Administrator")" Label="Administrator" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Operator")" Label="Operator" />
                 </Select>
             </FormItem>
             <FormItem Label="Enabled">

@@ -22,11 +22,11 @@
         <PropertyColumn Property="c => c.Status" Title="Status">
             @if (context.Status == "Online")
             {
-                <Badge Status="@PresetColor.Success.ToString()" Text="Online" />
+                <Badge Status="@BadgeStatus.Success" Text="Online" />
             }
             else
             {
-                <Badge Status="@PresetColor.Default.ToString()" Text="Offline" />
+                <Badge Status="@BadgeStatus.Default" Text="Offline" />
             }
         </PropertyColumn>
         <PropertyColumn Property="c => c.LastHeartbeatTime" Title="Last Heartbeat">

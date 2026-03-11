@@ -65,7 +65,7 @@
             }
         </PropertyColumn>
         <PropertyColumn Property="c => c.Enabled" Title="Enabled">
-            <Switch Checked="@context.Enabled" OnChange="@(async (e) => await ToggleEnabled(context))" Size="@("small")" />
+            <Switch Checked="@context.Enabled" OnChange="@(async (e) => await ToggleEnabled(context))" Size="@InputSize.Small" />
         </PropertyColumn>
         <ActionColumn Title="Actions">
             <Space>

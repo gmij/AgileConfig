@@ -107,11 +107,11 @@
                                 <PropertyColumn Property="n => n.Status" Title="Status">
                                     @if (context.Status == 1)
                                     {
-                                        <Badge Status="@PresetColor.Success.ToString()" Text="Online" />
+                                        <Badge Status="@BadgeStatus.Success" Text="Online" />
                                     }
                                     else
                                     {
-                                        <Badge Status="@PresetColor.Default.ToString()" Text="Offline" />
+                                        <Badge Status="@BadgeStatus.Default" Text="Offline" />
                                     }
                                 </PropertyColumn>
                                 <PropertyColumn Property="n => n.LastHeartbeatTime" Title="Last Heartbeat">
@@ -132,7 +132,7 @@
                             <Timeline>
                                 @foreach (var log in recentLogs)
                                 {
-                                    <TimelineItem Color="blue">
+                                    <TimelineItem Color="@("blue")">
                                         <div>
                                             <Text Strong>@log.LogType</Text>
                                             <br />

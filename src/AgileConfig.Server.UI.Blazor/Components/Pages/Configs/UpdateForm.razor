@@ -19,7 +19,7 @@
                 <Input @bind-Value="@formContext.Key" Placeholder="Enter key" Disabled="@IsEditMode" />
             </FormItem>
             <FormItem Label="Value">
-                <TextArea @bind-Value="@formContext.Value" Placeholder="Enter value" AutoSize="new AutoSizeType { MinRows = 3, MaxRows = 12 }" />
+                <TextArea @bind-Value="@formContext.Value" Placeholder="Enter value" MinRows="3" MaxRows="12" />
             </FormItem>
             <FormItem Label="Description">
                 <TextArea @bind-Value="@formContext.Description" Placeholder="Enter description" Rows="2" />

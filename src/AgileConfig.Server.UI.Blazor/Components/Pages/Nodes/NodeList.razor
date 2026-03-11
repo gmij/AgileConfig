@@ -22,11 +22,11 @@
         <PropertyColumn Property="n => n.Status" Title="Status">
             @if (context.Status == 1)
             {
-                <Badge Status="@PresetColor.Success.ToString()" Text="Online" />
+                <Badge Status="@BadgeStatus.Success" Text="Online" />
             }
             else
             {
-                <Badge Status="@PresetColor.Default.ToString()" Text="Offline" />
+                <Badge Status="@BadgeStatus.Default" Text="Offline" />
             }
         </PropertyColumn>
         <PropertyColumn Property="n => n.CreateTime" Title="Create Time">
