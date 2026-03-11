@@ -1,0 +1,434 @@
+@page "/apps"
+@using AgileConfig.Server.UI.Blazor.Services
+@using AgileConfig.Server.UI.Blazor.Models
+@inject ApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageTitle>Applications - AgileConfig</PageTitle>
+
+<PageContainer Title="Applications">
+    <Extra>
+        <Space>
+            <SpaceItem>
+                <Checkbox @bind-Checked="@groupAggregation" OnChange="@OnGroupAggregationChange">
+                    Group Aggregation
+                </Checkbox>
+            </SpaceItem>
+            <SpaceItem>
+                <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+                    Add Application
+                </Button>
+            </SpaceItem>
+        </Space>
+    </Extra>
+    <ChildContent>
+        <Table TItem="AppModel"
+               DataSource="@apps"
+               Loading="@loading"
+               @bind-PageIndex="@pageIndex"
+               @bind-PageSize="@pageSize"
+               Total="@total"
+               OnChange="@OnTableChange">
+            <PropertyColumn Property="c => c.Name" Title="App Name" Sortable />
+            <PropertyColumn Property="c => c.Id" Title="App ID" Sortable>
+                <Text Copyable>@context.Id</Text>
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.Secret" Title="Secret">
+                <Text Copyable CopyConfig="new() { Text = context.Secret }">
+                    <Password Value="@context.Secret" />
+                </Text>
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.Group" Title="Group" Sortable />
+            <PropertyColumn Property="c => c.CreateTime" Title="Create Time" Sortable>
+                @context.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss")
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.Inheritanced" Title="Public">
+                @if (context.Inheritanced)
+                {
+                    <Tag Color="success">Public</Tag>
+                }
+                else
+                {
+                    <Tag>Private</Tag>
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.InheritancedAppNames" Title="Linked Apps">
+                @if (context.InheritancedAppNames != null)
+                {
+                    @foreach (var name in context.InheritancedAppNames)
+                    {
+                        <Tag Color="blue">@name</Tag>
+                    }
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.Enabled" Title="Enabled">
+                <Switch Checked="@context.Enabled" OnChange="@(async (e) => await ToggleEnabled(context))" Size="@SwitchSize.Small" />
+            </PropertyColumn>
+            <ActionColumn Title="Actions">
+                <Space>
+                    <SpaceItem>
+                        <Button Type="@ButtonType.Link" OnClick="@(() => NavigateToConfigs(context))">
+                            Configs
+                        </Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Button Type="@ButtonType.Link" OnClick="@(() => ShowEditModal(context))">
+                            Edit
+                        </Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Button Type="@ButtonType.Link" OnClick="@(() => ShowAuthModal(context))">
+                            Auth
+                        </Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Popconfirm Title="@($"Are you sure to delete {context.Name}?")"
+                                    OnConfirm="@(() => DeleteApp(context))">
+                            <Button Type="@ButtonType.Link" Danger>Delete</Button>
+                        </Popconfirm>
+                    </SpaceItem>
+                </Space>
+            </ActionColumn>
+        </Table>
+    </ChildContent>
+</PageContainer>
+
+<Modal Title="@(isEditMode ? "Edit Application" : "Add Application")"
+       @bind-Visible="@modalVisible"
+       OnOk="@HandleSubmit"
+       OnCancel="@HandleCancel"
+       ConfirmLoading="@saving">
+    <Form Model="@currentApp" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+        <FormItem Label="Name" Required>
+            <Input @bind-Value="@context.Name" Placeholder="Enter application name" />
+        </FormItem>
+        <FormItem Label="ID" Required>
+            <Input @bind-Value="@context.Id" Placeholder="Enter application ID" Disabled="@isEditMode" />
+        </FormItem>
+        <FormItem Label="Secret">
+            <InputPassword @bind-Value="@context.Secret" Placeholder="Enter secret (optional)" />
+        </FormItem>
+        <FormItem Label="Group">
+            <Select @bind-Value="@context.Group"
+                    Placeholder="Select or enter group"
+                    Mode="@SelectMode.Tags">
+                @foreach (var group in appGroups)
+                {
+                    <SelectOption Value="@group">@group</SelectOption>
+                }
+            </Select>
+        </FormItem>
+        <FormItem Label="Public">
+            <Switch @bind-Checked="@context.Inheritanced" />
+            <Text Type="@TextElementType.Secondary" Style="margin-left: 10px;">
+                Public apps can be inherited by other apps
+            </Text>
+        </FormItem>
+        @if (!context.Inheritanced)
+        {
+            <FormItem Label="Link to Apps">
+                <Select @bind-Values="@context.InheritancedApps"
+                        Mode="@SelectMode.Multiple"
+                        Placeholder="Select apps to inherit from">
+                    @foreach (var app in publicApps)
+                    {
+                        <SelectOption Value="@app.Id">@app.Name</SelectOption>
+                    }
+                </Select>
+            </FormItem>
+        }
+        <FormItem Label="Enabled">
+            <Switch @bind-Checked="@context.Enabled" />
+        </FormItem>
+    </Form>
+</Modal>
+
+<Modal Title="@($"User Authorization - {currentApp?.Name}")"
+       @bind-Visible="@authModalVisible"
+       OnOk="@HandleAuthSubmit"
+       OnCancel="@(() => authModalVisible = false)"
+       Width="800"
+       ConfirmLoading="@saving">
+    <Table TItem="UserAuthModel" DataSource="@userAuths" Size="@TableSize.Small" Pagination="false">
+        <PropertyColumn Property="u => u.UserName" Title="Username" />
+        <PropertyColumn Property="u => u.Permission" Title="Permission">
+            <Select @bind-Value="@context.Permission" Style="width: 150px;">
+                <SelectOption Value="R">Read</SelectOption>
+                <SelectOption Value="RW">Read & Write</SelectOption>
+            </Select>
+        </PropertyColumn>
+        <ActionColumn Title="Actions">
+            <Popconfirm Title="Remove this user?" OnConfirm="@(() => RemoveUserAuth(context))">
+                <Button Type="@ButtonType.Link" Danger Size="@ButtonSize.Small">Remove</Button>
+            </Popconfirm>
+        </ActionColumn>
+    </Table>
+    <Divider />
+    <Space Direction="DirectionVHType.Horizontal">
+        <SpaceItem>
+            <Input @bind-Value="@newUserName" Placeholder="Enter username" Style="width: 200px;" />
+        </SpaceItem>
+        <SpaceItem>
+            <Select @bind-Value="@newUserPermission" Placeholder="Select permission" Style="width: 150px;">
+                <SelectOption Value="R">Read</SelectOption>
+                <SelectOption Value="RW">Read & Write</SelectOption>
+            </Select>
+        </SpaceItem>
+        <SpaceItem>
+            <Button Type="@ButtonType.Primary" OnClick="@AddUserAuth" Icon="@IconType.Outline.Plus">
+                Add User
+            </Button>
+        </SpaceItem>
+    </Space>
+</Modal>
+
+@code {
+    private List<AppModel> apps = new();
+    private List<string> appGroups = new();
+    private List<AppModel> publicApps = new();
+    private bool loading = false;
+    private bool saving = false;
+    private bool groupAggregation = false;
+    private int pageIndex = 1;
+    private int pageSize = 20;
+    private int total = 0;
+    private string sortField = "CreateTime";
+    private string sortOrder = "descend";
+
+    private bool modalVisible = false;
+    private bool authModalVisible = false;
+    private bool isEditMode = false;
+    private AppModel currentApp = new();
+
+    private List<UserAuthModel> userAuths = new();
+    private string newUserName = "";
+    private string newUserPermission = "R";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadApps();
+        await LoadAppGroups();
+        await LoadPublicApps();
+    }
+
+    private async Task LoadApps()
+    {
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var queryParams = new
+            {
+                current = pageIndex,
+                pageSize = pageSize,
+                sortField = sortField,
+                ascOrDesc = sortOrder,
+                tableGrouped = groupAggregation
+            };
+
+            var response = await ApiClient.GetAsync<ApiResponse<PagedResult<AppModel>>>("/api/app/search");
+            if (response?.Success == true && response.Data != null)
+            {
+                apps = response.Data.Data ?? new();
+                total = response.Data.Total;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAppGroups()
+    {
+        try
+        {
+            var response = await ApiClient.GetAsync<ApiResponse<List<string>>>("/api/app/groups");
+            if (response?.Success == true && response.Data != null)
+            {
+                appGroups = response.Data;
+            }
+        }
+        catch { }
+    }
+
+    private async Task LoadPublicApps()
+    {
+        try
+        {
+            var response = await ApiClient.GetAsync<ApiResponse<List<AppModel>>>("/api/app/inheritancedApps");
+            if (response?.Success == true && response.Data != null)
+            {
+                publicApps = response.Data;
+            }
+        }
+        catch { }
+    }
+
+    private async Task OnGroupAggregationChange()
+    {
+        await LoadApps();
+    }
+
+    private async Task OnTableChange(QueryModel<AppModel> queryModel)
+    {
+        // Handle sorting
+        if (queryModel.SortModel != null && queryModel.SortModel.Length > 0)
+        {
+            var sort = queryModel.SortModel[0];
+            sortField = sort.FieldName;
+            sortOrder = sort.Sort;
+        }
+        await LoadApps();
+    }
+
+    private void ShowAddModal()
+    {
+        isEditMode = false;
+        currentApp = new AppModel { Enabled = true };
+        modalVisible = true;
+    }
+
+    private void ShowEditModal(AppModel app)
+    {
+        isEditMode = true;
+        currentApp = new AppModel
+        {
+            Id = app.Id,
+            Name = app.Name,
+            Secret = app.Secret,
+            Group = app.Group,
+            Inheritanced = app.Inheritanced,
+            InheritancedApps = app.InheritancedApps,
+            Enabled = app.Enabled
+        };
+        modalVisible = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        saving = true;
+        StateHasChanged();
+
+        try
+        {
+            var endpoint = isEditMode ? "/api/app" : "/api/app";
+            var response = isEditMode
+                ? await ApiClient.PutAsync(endpoint, currentApp)
+                : await ApiClient.PostAsync(endpoint, currentApp);
+
+            if (response.IsSuccessStatusCode)
+            {
+                modalVisible = false;
+                await LoadApps();
+            }
+        }
+        finally
+        {
+            saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleCancel()
+    {
+        modalVisible = false;
+        currentApp = new();
+    }
+
+    private async Task ToggleEnabled(AppModel app)
+    {
+        try
+        {
+            var response = await ApiClient.PostAsync($"/api/app/{app.Id}/enable", new { });
+            if (response.IsSuccessStatusCode)
+            {
+                app.Enabled = !app.Enabled;
+                StateHasChanged();
+            }
+        }
+        catch { }
+    }
+
+    private async Task DeleteApp(AppModel app)
+    {
+        try
+        {
+            var response = await ApiClient.DeleteAsync($"/api/app/{app.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadApps();
+            }
+        }
+        catch { }
+    }
+
+    private void NavigateToConfigs(AppModel app)
+    {
+        Navigation.NavigateTo($"/configs/{app.Id}/{app.Name}");
+    }
+
+    private async Task ShowAuthModal(AppModel app)
+    {
+        currentApp = app;
+        authModalVisible = true;
+
+        try
+        {
+            var response = await ApiClient.GetAsync<ApiResponse<List<UserAuthModel>>>($"/api/app/{app.Id}/auth");
+            if (response?.Success == true && response.Data != null)
+            {
+                userAuths = response.Data;
+            }
+        }
+        catch { }
+    }
+
+    private void AddUserAuth()
+    {
+        if (!string.IsNullOrWhiteSpace(newUserName))
+        {
+            userAuths.Add(new UserAuthModel
+            {
+                UserId = newUserName,
+                UserName = newUserName,
+                Permission = newUserPermission
+            });
+            newUserName = "";
+            newUserPermission = "R";
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveUserAuth(UserAuthModel userAuth)
+    {
+        userAuths.Remove(userAuth);
+        StateHasChanged();
+    }
+
+    private async Task HandleAuthSubmit()
+    {
+        saving = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await ApiClient.PostAsync($"/api/app/{currentApp.Id}/auth", userAuths);
+            if (response.IsSuccessStatusCode)
+            {
+                authModalVisible = false;
+            }
+        }
+        finally
+        {
+            saving = false;
+            StateHasChanged();
+        }
+    }
+}

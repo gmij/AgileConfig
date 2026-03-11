@@ -1,0 +1,74 @@
+@page "/clients"
+@using AgileConfig.Server.UI.Blazor.Services
+@using AgileConfig.Server.UI.Blazor.Models
+@inject ApiClient ApiClient
+
+<PageTitle>Client Connections - AgileConfig</PageTitle>
+
+<PageContainer Title="Client Connections">
+    <ChildContent>
+        <Table TItem="ClientInfoModel"
+               DataSource="@clients"
+               Loading="@loading">
+            <PropertyColumn Property="c => c.Id" Title="Client ID" />
+            <PropertyColumn Property="c => c.AppId" Title="App ID" />
+            <PropertyColumn Property="c => c.Name" Title="Name" />
+            <PropertyColumn Property="c => c.Ip" Title="IP Address" />
+            <PropertyColumn Property="c => c.Tag" Title="Tag">
+                <Tag>@context.Tag</Tag>
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.Status" Title="Status">
+                @if (context.Status == "Online")
+                {
+                    <Badge Status="@PresetColor.Success.ToString()" Text="Online" />
+                }
+                else
+                {
+                    <Badge Status="@PresetColor.Default.ToString()" Text="Offline" />
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.LastHeartbeatTime" Title="Last Heartbeat">
+                @context.LastHeartbeatTime?.ToString("yyyy-MM-dd HH:mm:ss")
+            </PropertyColumn>
+        </Table>
+    </ChildContent>
+</PageContainer>
+
+@code {
+    private List<ClientInfoModel> clients = new();
+    private bool loading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClients();
+
+        var timer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadClients();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private async Task LoadClients()
+    {
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await ApiClient.GetAsync<ApiResponse<List<ClientInfoModel>>>("/api/client");
+            if (response?.Success == true && response.Data != null)
+            {
+                clients = response.Data;
+            }
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

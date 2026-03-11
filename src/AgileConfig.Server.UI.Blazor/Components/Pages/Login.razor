@@ -1,6 +1,6 @@
 @page "/login"
 @using AgileConfig.Server.UI.Blazor.Services
-@inject ApiClient ApiClient
+@inject AuthenticationService AuthService
 @inject NavigationManager Navigation
 
 <PageTitle>Login - AgileConfig</PageTitle>
@@ -42,13 +42,10 @@
 
         try
         {
-            ApiClient.SetBasicAuth(loginModel.Username, loginModel.Password);
-            var response = await ApiClient.PostAsync("/api/admin/jwt", new { });
+            var success = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
 
-            if (response.IsSuccessStatusCode)
+            if (success)
             {
-                var content = await response.Content.ReadAsStringAsync();
-                // Store token and redirect
                 Navigation.NavigateTo("/");
             }
             else

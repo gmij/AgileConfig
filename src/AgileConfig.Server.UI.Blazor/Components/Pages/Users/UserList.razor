@@ -1,0 +1,203 @@
+@page "/users"
+@using AgileConfig.Server.UI.Blazor.Services
+@using AgileConfig.Server.UI.Blazor.Models
+@inject ApiClient ApiClient
+
+<PageTitle>Users - AgileConfig</PageTitle>
+
+<PageContainer Title="User Management">
+    <ChildContent>
+        <Table TItem="UserModel"
+               DataSource="@users"
+               Loading="@loading"
+               @bind-PageIndex="@pageIndex"
+               @bind-PageSize="@pageSize"
+               Total="@total">
+            <ToolbarTemplate>
+                <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+                    Add User
+                </Button>
+            </ToolbarTemplate>
+            <PropertyColumn Property="u => u.UserName" Title="Username" />
+            <PropertyColumn Property="u => u.Email" Title="Email" />
+            <PropertyColumn Property="u => u.Roles" Title="Roles">
+                @if (context.Roles != null)
+                {
+                    @foreach (var role in context.Roles)
+                    {
+                        <Tag Color="blue">@role</Tag>
+                    }
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="u => u.Enabled" Title="Status">
+                @if (context.Enabled)
+                {
+                    <Badge Status="@PresetColor.Success.ToString()" Text="Enabled" />
+                }
+                else
+                {
+                    <Badge Status="@PresetColor.Default.ToString()" Text="Disabled" />
+                }
+            </PropertyColumn>
+            <PropertyColumn Property="u => u.CreateTime" Title="Create Time">
+                @context.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss")
+            </PropertyColumn>
+            <ActionColumn Title="Actions">
+                <Space>
+                    <SpaceItem>
+                        <Button Type="@ButtonType.Link" OnClick="@(() => ShowEditModal(context))">Edit</Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Button Type="@ButtonType.Link" OnClick="@(() => ToggleUserStatus(context))">
+                            @(context.Enabled ? "Disable" : "Enable")
+                        </Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Popconfirm Title="@($"Delete user {context.UserName}?")" OnConfirm="@(() => DeleteUser(context))">
+                            <Button Type="@ButtonType.Link" Danger>Delete</Button>
+                        </Popconfirm>
+                    </SpaceItem>
+                </Space>
+            </ActionColumn>
+        </Table>
+    </ChildContent>
+</PageContainer>
+
+<Modal Title="@(isEditMode ? "Edit User" : "Add User")"
+       @bind-Visible="@modalVisible"
+       OnOk="@HandleSubmit"
+       OnCancel="@(() => modalVisible = false)"
+       ConfirmLoading="@saving">
+    <Form Model="@currentUser" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+        <FormItem Label="Username" Required>
+            <Input @bind-Value="@context.UserName" Placeholder="Enter username" Disabled="@isEditMode" />
+        </FormItem>
+        <FormItem Label="Password" Required="@(!isEditMode)">
+            <InputPassword @bind-Value="@context.Password" Placeholder="@(isEditMode ? "Leave blank to keep current" : "Enter password")" />
+        </FormItem>
+        <FormItem Label="Email">
+            <Input @bind-Value="@context.Email" Placeholder="Enter email" />
+        </FormItem>
+        <FormItem Label="Roles">
+            <Select @bind-Values="@context.Roles" Mode="@SelectMode.Multiple" Placeholder="Select roles">
+                <SelectOption Value="SuperAdmin">Super Admin</SelectOption>
+                <SelectOption Value="Administrator">Administrator</SelectOption>
+                <SelectOption Value="Operator">Operator</SelectOption>
+            </Select>
+        </FormItem>
+        <FormItem Label="Enabled">
+            <Switch @bind-Checked="@context.Enabled" />
+        </FormItem>
+    </Form>
+</Modal>
+
+@code {
+    private List<UserModel> users = new();
+    private bool loading = false;
+    private bool saving = false;
+    private int pageIndex = 1;
+    private int pageSize = 20;
+    private int total = 0;
+
+    private bool modalVisible = false;
+    private bool isEditMode = false;
+    private UserModel currentUser = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await ApiClient.GetAsync<ApiResponse<PagedResult<UserModel>>>($"/api/user?current={pageIndex}&pageSize={pageSize}");
+            if (response?.Success == true && response.Data != null)
+            {
+                users = response.Data.Data ?? new();
+                total = response.Data.Total;
+            }
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowAddModal()
+    {
+        isEditMode = false;
+        currentUser = new UserModel { Enabled = true };
+        modalVisible = true;
+    }
+
+    private void ShowEditModal(UserModel user)
+    {
+        isEditMode = true;
+        currentUser = new UserModel
+        {
+            Id = user.Id,
+            UserName = user.UserName,
+            Email = user.Email,
+            Roles = user.Roles,
+            Enabled = user.Enabled
+        };
+        modalVisible = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        saving = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = isEditMode
+                ? await ApiClient.PutAsync("/api/user", currentUser)
+                : await ApiClient.PostAsync("/api/user", currentUser);
+
+            if (response.IsSuccessStatusCode)
+            {
+                modalVisible = false;
+                await LoadUsers();
+            }
+        }
+        finally
+        {
+            saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleUserStatus(UserModel user)
+    {
+        try
+        {
+            var response = await ApiClient.PostAsync($"/api/user/{user.Id}/toggle", new { });
+            if (response.IsSuccessStatusCode)
+            {
+                user.Enabled = !user.Enabled;
+                StateHasChanged();
+            }
+        }
+        catch { }
+    }
+
+    private async Task DeleteUser(UserModel user)
+    {
+        try
+        {
+            var response = await ApiClient.DeleteAsync($"/api/user/{user.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadUsers();
+            }
+        }
+        catch { }
+    }
+}

@@ -1,23 +1,144 @@
 ﻿@inherits LayoutComponentBase
+@using AgileConfig.Server.UI.Blazor.Services
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<Layout Style="min-height: 100vh;">
+    <Sider Collapsible @bind-Collapsed="@collapsed">
+        <div class="logo">
+            <h3 style="color: white; text-align: center; padding: 16px 0;">
+                @(collapsed ? "AC" : "AgileConfig")
+            </h3>
         </div>
-
-        <article class="content px-4">
+        <Menu Theme="MenuTheme.Dark" Mode="MenuMode.Inline" SelectedKeys="@selectedKeys">
+            <MenuItem Key="home" RouterLink="/" Icon="@IconType.Outline.Home">
+                Dashboard
+            </MenuItem>
+            <MenuItem Key="apps" RouterLink="/apps" Icon="@IconType.Outline.AppstoreAdd">
+                Applications
+            </MenuItem>
+            <MenuItem Key="services" RouterLink="/services" Icon="@IconType.Outline.Api">
+                Services
+            </MenuItem>
+            <MenuItem Key="nodes" RouterLink="/nodes" Icon="@IconType.Outline.Cluster">
+                Server Nodes
+            </MenuItem>
+            <MenuItem Key="clients" RouterLink="/clients" Icon="@IconType.Outline.ApiOutlined">
+                Clients
+            </MenuItem>
+            <SubMenu Key="system" Title="System" Icon="@IconType.Outline.Setting">
+                <MenuItem Key="users" RouterLink="/users" Icon="@IconType.Outline.User">
+                    Users
+                </MenuItem>
+                <MenuItem Key="logs" RouterLink="/logs" Icon="@IconType.Outline.FileText">
+                    Logs
+                </MenuItem>
+            </SubMenu>
+        </Menu>
+    </Sider>
+    <Layout>
+        <Header Style="background: #fff; padding: 0 24px; box-shadow: 0 1px 4px rgba(0,21,41,.08);">
+            <Row Justify="space-between" Align="middle">
+                <AntDesign.Col>
+                    <Breadcrumb>
+                        <BreadcrumbItem>
+                            <Icon Type="@IconType.Outline.Home" />
+                            <span>Home</span>
+                        </BreadcrumbItem>
+                        <BreadcrumbItem>
+                            @GetCurrentPageTitle()
+                        </BreadcrumbItem>
+                    </Breadcrumb>
+                </AntDesign.Col>
+                <AntDesign.Col>
+                    <Space>
+                        <SpaceItem>
+                            <Text>Welcome, @(AuthService.CurrentUser ?? "Guest")</Text>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Dropdown>
+                                <Overlay>
+                                    <Menu>
+                                        <MenuItem OnClick="@(() => Navigation.NavigateTo("/profile"))">
+                                            <Icon Type="@IconType.Outline.User" />
+                                            Profile
+                                        </MenuItem>
+                                        <MenuItem OnClick="@AuthService.Logout">
+                                            <Icon Type="@IconType.Outline.Logout" />
+                                            Logout
+                                        </MenuItem>
+                                    </Menu>
+                                </Overlay>
+                                <ChildContent>
+                                    <Avatar Icon="@IconType.Outline.User" Style="cursor: pointer; background-color: #1890ff;" />
+                                </ChildContent>
+                            </Dropdown>
+                        </SpaceItem>
+                    </Space>
+                </AntDesign.Col>
+            </Row>
+        </Header>
+        <Content Style="margin: 24px; background: #fff; padding: 24px; min-height: 280px;">
             @Body
-        </article>
-    </main>
-</div>
+        </Content>
+        <Footer Style="text-align: center;">
+            AgileConfig ©2026 Created with ❤️ by AgileConfig Team
+        </Footer>
+    </Layout>
+</Layout>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+@code {
+    private bool collapsed = false;
+    private string[] selectedKeys = new[] { "home" };
+
+    protected override void OnInitialized()
+    {
+        UpdateSelectedKeys();
+        Navigation.LocationChanged += (s, e) => UpdateSelectedKeys();
+    }
+
+    private void UpdateSelectedKeys()
+    {
+        var path = new Uri(Navigation.Uri).AbsolutePath.ToLower();
+        selectedKeys = path switch
+        {
+            "/" => new[] { "home" },
+            "/apps" => new[] { "apps" },
+            var p when p.StartsWith("/configs") => new[] { "apps" },
+            "/services" => new[] { "services" },
+            "/nodes" => new[] { "nodes" },
+            "/clients" => new[] { "clients" },
+            "/users" => new[] { "users" },
+            "/logs" => new[] { "logs" },
+            _ => new[] { "home" }
+        };
+        StateHasChanged();
+    }
+
+    private string GetCurrentPageTitle()
+    {
+        var path = new Uri(Navigation.Uri).AbsolutePath.ToLower();
+        return path switch
+        {
+            "/" => "Dashboard",
+            "/apps" => "Applications",
+            var p when p.StartsWith("/configs") => "Configurations",
+            "/services" => "Services",
+            "/nodes" => "Server Nodes",
+            "/clients" => "Clients",
+            "/users" => "Users",
+            "/logs" => "Logs",
+            _ => "Home"
+        };
+    }
+}
+
+<style>
+    .logo {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+</style>

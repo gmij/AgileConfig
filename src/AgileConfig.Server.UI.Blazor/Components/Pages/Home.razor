@@ -1,7 +1,225 @@
 ﻿@page "/"
+@using AgileConfig.Server.UI.Blazor.Services
+@using AgileConfig.Server.UI.Blazor.Models
+@inject ApiClient ApiClient
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Home - AgileConfig</PageTitle>
 
-<h1>Hello, world!</h1>
+<PageContainer Title="Dashboard">
+    <ChildContent>
+        <Space Direction="DirectionVHType.Vertical" Style="width: 100%;" Size="@("large")">
+            <SpaceItem>
+                <Row Gutter="16">
+                    <AntDesign.Col Span="6">
+                        <Card>
+                            <Statistic Title="Applications"
+                                      Value="@statistics.AppCount"
+                                      Prefix="@IconRender(IconType.Outline.AppstoreAdd)" />
+                        </Card>
+                    </AntDesign.Col>
+                    <AntDesign.Col Span="6">
+                        <Card>
+                            <Statistic Title="Configurations"
+                                      Value="@statistics.ConfigCount"
+                                      Prefix="@IconRender(IconType.Outline.Setting)" />
+                        </Card>
+                    </AntDesign.Col>
+                    <AntDesign.Col Span="6">
+                        <Card>
+                            <Statistic Title="Server Nodes"
+                                      ValueTemplate="@NodeValueTemplate"
+                                      Prefix="@IconRender(IconType.Outline.Cluster)" />
+                        </Card>
+                    </AntDesign.Col>
+                    <AntDesign.Col Span="6">
+                        <Card>
+                            <Statistic Title="Connected Clients"
+                                      Value="@statistics.ClientCount"
+                                      Prefix="@IconRender(IconType.Outline.ApiOutlined)" />
+                        </Card>
+                    </AntDesign.Col>
+                </Row>
+            </SpaceItem>
 
-Welcome to your new app.
+            <SpaceItem>
+                <Card Title="Recently Visited Applications">
+                    @if (recentApps.Any())
+                    {
+                        <List DataSource="@recentApps" Size="@ListSize.Large">
+                            <ChildContent Context="app">
+                                <ListItem>
+                                    <ListItemMeta>
+                                        <AvatarTemplate>
+                                            <Avatar Icon="@IconType.Outline.AppstoreAdd" Style="background-color: #1890ff;" />
+                                        </AvatarTemplate>
+                                        <TitleTemplate>
+                                            <a @onclick="() => NavigateToConfigs(app)" style="cursor: pointer;">
+                                                @app.Name
+                                            </a>
+                                        </TitleTemplate>
+                                        <DescriptionTemplate>
+                                            <Space>
+                                                <SpaceItem>
+                                                    <Text Type="@TextElementType.Secondary">ID: @app.Id</Text>
+                                                </SpaceItem>
+                                                @if (!string.IsNullOrEmpty(app.Group))
+                                                {
+                                                    <SpaceItem>
+                                                        <Tag>@app.Group</Tag>
+                                                    </SpaceItem>
+                                                }
+                                            </Space>
+                                        </DescriptionTemplate>
+                                    </ListItemMeta>
+                                </ListItem>
+                            </ChildContent>
+                        </List>
+                    }
+                    else
+                    {
+                        <Empty Description="No recently visited applications" />
+                    }
+                </Card>
+            </SpaceItem>
+
+            <SpaceItem>
+                <Row Gutter="16">
+                    <AntDesign.Col Span="12">
+                        <Card Title="Server Nodes Status" Loading="@loading">
+                            @if (serverNodes.Any())
+                            {
+                                <Table TItem="ServerNodeModel"
+                                       DataSource="@serverNodes"
+                                       Size="@TableSize.Small"
+                                       Pagination="false">
+                                    <PropertyColumn Property="n => n.Address" Title="Address" />
+                                    <PropertyColumn Property="n => n.Status" Title="Status">
+                                        @if (context.Status == 1)
+                                        {
+                                            <Badge Status="@PresetColor.Success.ToString()" Text="Online" />
+                                        }
+                                        else
+                                        {
+                                            <Badge Status="@PresetColor.Default.ToString()" Text="Offline" />
+                                        }
+                                    </PropertyColumn>
+                                    <PropertyColumn Property="n => n.LastHeartbeatTime" Title="Last Heartbeat">
+                                        @context.LastHeartbeatTime?.ToString("yyyy-MM-dd HH:mm:ss")
+                                    </PropertyColumn>
+                                </Table>
+                            }
+                            else
+                            {
+                                <Empty Description="No server nodes" />
+                            }
+                        </Card>
+                    </AntDesign.Col>
+                    <AntDesign.Col Span="12">
+                        <Card Title="Recent Activities" Loading="@loading">
+                            @if (recentLogs.Any())
+                            {
+                                <Timeline>
+                                    @foreach (var log in recentLogs)
+                                    {
+                                        <TimelineItem Color="blue">
+                                            <div>
+                                                <Text Strong>@log.LogType</Text>
+                                                <br />
+                                                <Text Type="@TextElementType.Secondary" Style="font-size: 12px;">
+                                                    @log.LogTime
+                                                </Text>
+                                                <br />
+                                                <Text>@log.LogText</Text>
+                                            </div>
+                                        </TimelineItem>
+                                    }
+                                </Timeline>
+                            }
+                            else
+                            {
+                                <Empty Description="No recent activities" />
+                            }
+                        </Card>
+                    </AntDesign.Col>
+                </Row>
+            </SpaceItem>
+        </Space>
+    </ChildContent>
+</PageContainer>
+
+@code {
+    private DashboardStatistics statistics = new();
+    private List<AppModel> recentApps = new();
+    private List<ServerNodeModel> serverNodes = new();
+    private List<SysLogModel> recentLogs = new();
+    private bool loading = false;
+
+    private RenderFragment NodeValueTemplate => @<text>
+        <span>@statistics.NodeOnlineCount / @statistics.NodeCount</span>
+    </text>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+
+        var timer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadDashboardData();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private async Task LoadDashboardData()
+    {
+        loading = true;
+
+        try
+        {
+            var statsResponse = await ApiClient.GetAsync<ApiResponse<DashboardStatistics>>("/api/report/statistics");
+            if (statsResponse?.Success == true && statsResponse.Data != null)
+            {
+                statistics = statsResponse.Data;
+            }
+
+            var recentAppsResponse = await ApiClient.GetAsync<ApiResponse<List<AppModel>>>("/api/app/recent");
+            if (recentAppsResponse?.Success == true && recentAppsResponse.Data != null)
+            {
+                recentApps = recentAppsResponse.Data.Take(5).ToList();
+            }
+
+            var nodesResponse = await ApiClient.GetAsync<ApiResponse<List<ServerNodeModel>>>("/api/serverNode");
+            if (nodesResponse?.Success == true && nodesResponse.Data != null)
+            {
+                serverNodes = nodesResponse.Data.Take(5).ToList();
+            }
+
+            var logsResponse = await ApiClient.GetAsync<ApiResponse<List<SysLogModel>>>("/api/log?pageSize=10");
+            if (logsResponse?.Success == true && logsResponse.Data != null)
+            {
+                recentLogs = logsResponse.Data.Take(5).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private RenderFragment IconRender(string iconType)
+    {
+        return @<Icon Type="@iconType" Style="color: #1890ff;" />;
+    }
+
+    private void NavigateToConfigs(AppModel app)
+    {
+        Navigation.NavigateTo($"/configs/{app.Id}/{app.Name}");
+    }
+}

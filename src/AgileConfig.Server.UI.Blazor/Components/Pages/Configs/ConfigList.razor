@@ -1,0 +1,462 @@
+@page "/configs/{AppId}/{AppName}"
+@using AgileConfig.Server.UI.Blazor.Services
+@using AgileConfig.Server.UI.Blazor.Models
+@inject ApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageTitle>Configs - @AppName - AgileConfig</PageTitle>
+
+<PageContainer Title="@AppName">
+    <Extra>
+        <RadioGroup @bind-Value="@currentEnv" ButtonStyle="@RadioButtonStyle.Solid" OnChange="@OnEnvChange">
+            @foreach (var env in envList)
+            {
+                <RadioButton RadioButton Value="@env">@env</RadioButton>
+            }
+        </RadioGroup>
+    </Extra>
+    <ChildContent>
+        <Space Direction="DirectionVHType.Vertical" Style="width: 100%;" Size="@("middle")">
+            <SpaceItem>
+                <Space>
+                    @if (waitPublishStatus.AddCount > 0)
+                    {
+                        <SpaceItem>
+                            <Badge Count="@waitPublishStatus.AddCount" OffsetX="-5">
+                                <Tag Color="blue">New</Tag>
+                            </Badge>
+                        </SpaceItem>
+                    }
+                    @if (waitPublishStatus.EditCount > 0)
+                    {
+                        <SpaceItem>
+                            <Badge Count="@waitPublishStatus.EditCount" OffsetX="-5">
+                                <Tag Color="gold">Modified</Tag>
+                            </Badge>
+                        </SpaceItem>
+                    }
+                    @if (waitPublishStatus.DeleteCount > 0)
+                    {
+                        <SpaceItem>
+                            <Badge Count="@waitPublishStatus.DeleteCount" OffsetX="-5">
+                                <Tag Color="red">Deleted</Tag>
+                            </Badge>
+                        </SpaceItem>
+                    }
+                </Space>
+            </SpaceItem>
+            <SpaceItem>
+                <Table TItem="ConfigModel"
+                       DataSource="@configs"
+                       Loading="@loading"
+                       @bind-SelectedRows="@selectedRows"
+                       RowSelectionType="@RowSelectionType.Checkbox">
+                    <ToolbarTemplate>
+                        <Space>
+                            <SpaceItem>
+                                <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+                                    Add
+                                </Button>
+                            </SpaceItem>
+                            @if (HasWaitPublish())
+                            {
+                                <SpaceItem>
+                                    <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.CloudUpload" OnClick="@ShowPublishModal">
+                                        @(selectedRows.Any(x => x.EditStatus != 10) ? "Publish Selected" : "Publish All")
+                                    </Button>
+                                </SpaceItem>
+                            }
+                            @if (selectedRows.Any(x => x.EditStatus != 10))
+                            {
+                                <SpaceItem>
+                                    <Button Icon="@IconType.Outline.Rollback" OnClick="@CancelEditSelected">
+                                        Cancel Edit
+                                    </Button>
+                                </SpaceItem>
+                            }
+                            @if (selectedRows.Any())
+                            {
+                                <SpaceItem>
+                                    <Popconfirm Title="Delete selected configs?" OnConfirm="@DeleteSelected">
+                                        <Button Danger Icon="@IconType.Outline.Delete">Delete</Button>
+                                    </Popconfirm>
+                                </SpaceItem>
+                            }
+                            <SpaceItem>
+                                <Dropdown>
+                                    <Overlay>
+                                        <Menu>
+                                            <MenuItem OnClick="@ShowVersionHistory">Version History</MenuItem>
+                                            <MenuItem OnClick="@ShowEnvSync">Environment Sync</MenuItem>
+                                            <MenuItem OnClick="@ShowJsonImport">Import JSON</MenuItem>
+                                            <MenuItem OnClick="@ExportJson">Export JSON</MenuItem>
+                                        </Menu>
+                                    </Overlay>
+                                    <ChildContent>
+                                        <Button>
+                                            More <Icon Type="@IconType.Outline.Down" />
+                                        </Button>
+                                    </ChildContent>
+                                </Dropdown>
+                            </SpaceItem>
+                        </Space>
+                    </ToolbarTemplate>
+                    <PropertyColumn Property="c => c.Group" Title="Group" Sortable>
+                        <Text Copyable>@context.Group</Text>
+                    </PropertyColumn>
+                    <PropertyColumn Property="c => c.Key" Title="Key">
+                        <Text Copyable>@context.Key</Text>
+                    </PropertyColumn>
+                    <PropertyColumn Property="c => c.Value" Title="Value" Ellipsis>
+                        <Text Copyable>@context.Value</Text>
+                    </PropertyColumn>
+                    <PropertyColumn Property="c => c.Description" Title="Description" Ellipsis />
+                    <PropertyColumn Property="c => c.CreateTime" Title="Create Time" Sortable>
+                        @context.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss")
+                    </PropertyColumn>
+                    <PropertyColumn Property="c => c.EditStatus" Title="Edit Status">
+                        @GetEditStatusTag(context.EditStatus)
+                    </PropertyColumn>
+                    <PropertyColumn Property="c => c.OnlineStatus" Title="Publish Status">
+                        @if (context.OnlineStatus == 0)
+                        {
+                            <Tag Color="warning">Wait Publish</Tag>
+                        }
+                        else
+                        {
+                            <Tag Color="processing">Online</Tag>
+                        }
+                    </PropertyColumn>
+                    <ActionColumn Title="Actions">
+                        <Space>
+                            <SpaceItem>
+                                <Button Type="@ButtonType.Link" OnClick="@(() => ShowEditModal(context))">
+                                    Edit
+                                </Button>
+                            </SpaceItem>
+                            <SpaceItem>
+                                <Popconfirm Title="@($"Delete {context.Key}?")" OnConfirm="@(() => DeleteConfig(context))">
+                                    <Button Type="@ButtonType.Link" Danger>Delete</Button>
+                                </Popconfirm>
+                            </SpaceItem>
+                            <SpaceItem>
+                                <Dropdown>
+                                    <Overlay>
+                                        <Menu>
+                                            @if (context.EditStatus != 10)
+                                            {
+                                                <MenuItem OnClick="@(() => CancelEdit(context))">Cancel Edit</MenuItem>
+                                            }
+                                            <MenuItem OnClick="@(() => ShowHistory(context))">History</MenuItem>
+                                        </Menu>
+                                    </Overlay>
+                                    <ChildContent>
+                                        <Button Type="@ButtonType.Link">
+                                            <Icon Type="@IconType.Outline.Ellipsis" />
+                                        </Button>
+                                    </ChildContent>
+                                </Dropdown>
+                            </SpaceItem>
+                        </Space>
+                    </ActionColumn>
+                </Table>
+            </SpaceItem>
+        </Space>
+    </ChildContent>
+</PageContainer>
+
+<Modal Title="@(isEditMode ? "Edit Config" : "Add Config")"
+       @bind-Visible="@modalVisible"
+       OnOk="@HandleSubmit"
+       OnCancel="@(() => modalVisible = false)"
+       Width="600"
+       ConfirmLoading="@saving">
+    <Form Model="@currentConfig" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+        <FormItem Label="App">
+            <Input Value="@AppName" Disabled />
+        </FormItem>
+        <FormItem Label="Group">
+            <Input @bind-Value="@context.Group" Placeholder="Enter group (optional)" />
+        </FormItem>
+        <FormItem Label="Key" Required>
+            <Input @bind-Value="@context.Key" Placeholder="Enter key" Disabled="@isEditMode" />
+        </FormItem>
+        <FormItem Label="Value">
+            <TextArea @bind-Value="@context.Value" Placeholder="Enter value" Rows="4" />
+        </FormItem>
+        <FormItem Label="Description">
+            <TextArea @bind-Value="@context.Description" Placeholder="Enter description" Rows="2" />
+        </FormItem>
+    </Form>
+</Modal>
+
+<Modal Title="Publish Configurations"
+       @bind-Visible="@publishModalVisible"
+       OnOk="@HandlePublish"
+       OnCancel="@(() => publishModalVisible = false)"
+       ConfirmLoading="@publishing">
+    <p>Are you sure to publish all pending changes?</p>
+    <FormItem Label="Publish Log">
+        <TextArea @bind-Value="@publishLog" Placeholder="Enter publish log (optional, max 50 chars)" MaxLength="50" ShowCount />
+    </FormItem>
+</Modal>
+
+@code {
+    [Parameter]
+    public string AppId { get; set; } = "";
+
+    [Parameter]
+    public string AppName { get; set; } = "";
+
+    private List<ConfigModel> configs = new();
+    private List<ConfigModel> selectedRows = new();
+    private List<string> envList = new() { "DEV", "TEST", "STAGING", "PROD" };
+    private string currentEnv = "DEV";
+    private bool loading = false;
+    private bool saving = false;
+    private bool publishing = false;
+
+    private WaitPublishStatus waitPublishStatus = new();
+
+    private bool modalVisible = false;
+    private bool publishModalVisible = false;
+    private bool isEditMode = false;
+    private ConfigModel currentConfig = new();
+    private string publishLog = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConfigs();
+        await LoadWaitPublishStatus();
+    }
+
+    private async Task LoadConfigs()
+    {
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await ApiClient.GetAsync<ApiResponse<List<ConfigModel>>>($"/api/config/search?appId={AppId}&env={currentEnv}");
+            if (response?.Success == true && response.Data != null)
+            {
+                configs = response.Data;
+            }
+        }
+        catch { }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadWaitPublishStatus()
+    {
+        try
+        {
+            var response = await ApiClient.GetAsync<ApiResponse<WaitPublishStatus>>($"/api/config/{AppId}/waitPublishStatus?env={currentEnv}");
+            if (response?.Success == true && response.Data != null)
+            {
+                waitPublishStatus = response.Data;
+            }
+        }
+        catch { }
+    }
+
+    private async Task OnEnvChange()
+    {
+        await LoadConfigs();
+        await LoadWaitPublishStatus();
+    }
+
+    private bool HasWaitPublish()
+    {
+        return waitPublishStatus.AddCount + waitPublishStatus.EditCount + waitPublishStatus.DeleteCount > 0;
+    }
+
+    private RenderFragment GetEditStatusTag(int editStatus)
+    {
+        return editStatus switch
+        {
+            0 => @<Tag Color="blue">New</Tag>,
+            1 => @<Tag Color="gold">Modified</Tag>,
+            2 => @<Tag Color="red">Deleted</Tag>,
+            10 => @<Tag>Published</Tag>,
+            _ => @<Tag>Unknown</Tag>
+        };
+    }
+
+    private void ShowAddModal()
+    {
+        isEditMode = false;
+        currentConfig = new ConfigModel { AppId = AppId, Env = currentEnv };
+        modalVisible = true;
+    }
+
+    private void ShowEditModal(ConfigModel config)
+    {
+        isEditMode = true;
+        currentConfig = new ConfigModel
+        {
+            Id = config.Id,
+            AppId = config.AppId,
+            Group = config.Group,
+            Key = config.Key,
+            Value = config.Value,
+            Description = config.Description,
+            Env = currentEnv
+        };
+        modalVisible = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        saving = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = isEditMode
+                ? await ApiClient.PutAsync($"/api/config?env={currentEnv}", currentConfig)
+                : await ApiClient.PostAsync($"/api/config?env={currentEnv}", currentConfig);
+
+            if (response.IsSuccessStatusCode)
+            {
+                modalVisible = false;
+                await LoadConfigs();
+                await LoadWaitPublishStatus();
+            }
+        }
+        finally
+        {
+            saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowPublishModal()
+    {
+        publishLog = "";
+        publishModalVisible = true;
+    }
+
+    private async Task HandlePublish()
+    {
+        publishing = true;
+        StateHasChanged();
+
+        try
+        {
+            var ids = selectedRows.Where(x => x.EditStatus != 10).Select(x => x.Id).ToList();
+            var response = await ApiClient.PostAsync($"/api/config/{AppId}/publish?env={currentEnv}", new
+            {
+                ids = ids,
+                log = publishLog
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                publishModalVisible = false;
+                selectedRows.Clear();
+                await LoadConfigs();
+                await LoadWaitPublishStatus();
+            }
+        }
+        finally
+        {
+            publishing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteConfig(ConfigModel config)
+    {
+        try
+        {
+            var response = await ApiClient.DeleteAsync($"/api/config/{config.Id}?env={currentEnv}");
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadConfigs();
+                await LoadWaitPublishStatus();
+            }
+        }
+        catch { }
+    }
+
+    private async Task DeleteSelected()
+    {
+        try
+        {
+            var ids = selectedRows.Select(x => x.Id).ToList();
+            var response = await ApiClient.PostAsync($"/api/config/delete?env={currentEnv}", ids);
+            if (response.IsSuccessStatusCode)
+            {
+                selectedRows.Clear();
+                await LoadConfigs();
+                await LoadWaitPublishStatus();
+            }
+        }
+        catch { }
+    }
+
+    private async Task CancelEdit(ConfigModel config)
+    {
+        try
+        {
+            var response = await ApiClient.PostAsync($"/api/config/{config.Id}/cancelEdit?env={currentEnv}", new { });
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadConfigs();
+                await LoadWaitPublishStatus();
+            }
+        }
+        catch { }
+    }
+
+    private async Task CancelEditSelected()
+    {
+        try
+        {
+            var ids = selectedRows.Where(x => x.EditStatus != 10).Select(x => x.Id).ToList();
+            var response = await ApiClient.PostAsync($"/api/config/cancelEdit?env={currentEnv}", ids);
+            if (response.IsSuccessStatusCode)
+            {
+                selectedRows.Clear();
+                await LoadConfigs();
+                await LoadWaitPublishStatus();
+            }
+        }
+        catch { }
+    }
+
+    private void ShowHistory(ConfigModel config)
+    {
+        // TODO: Implement history modal
+    }
+
+    private void ShowVersionHistory()
+    {
+        // TODO: Implement version history modal
+    }
+
+    private void ShowEnvSync()
+    {
+        // TODO: Implement env sync modal
+    }
+
+    private void ShowJsonImport()
+    {
+        // TODO: Implement JSON import modal
+    }
+
+    private async Task ExportJson()
+    {
+        try
+        {
+            // Download JSON file
+            Navigation.NavigateTo($"/api/config/{AppId}/export?env={currentEnv}", true);
+        }
+        catch { }
+    }
+}
