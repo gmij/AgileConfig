@@ -30,8 +30,7 @@
            Loading="@loading"
            @bind-PageIndex="@pageIndex"
            @bind-PageSize="@pageSize"
-           Total="@total"
-           OnChange="@OnTableChange">
+           Total="@total">
         <PropertyColumn Property="c => c.Name" Title="App Name" Sortable />
         <PropertyColumn Property="c => c.Id" Title="App ID" Sortable>
             <Text Copyable>@context.Id</Text>

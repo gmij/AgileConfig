@@ -18,7 +18,19 @@ public class ConfigListBase : ComponentBase
     protected List<ConfigModel> configs = new();
     protected List<ConfigModel> selectedRows = new();
     protected List<string> envList = new() { "DEV", "TEST", "STAGING", "PROD" };
-    protected string currentEnv = "DEV";
+    private string _currentEnv = "DEV";
+    protected string currentEnv
+    {
+        get => _currentEnv;
+        set
+        {
+            if (_currentEnv != value)
+            {
+                _currentEnv = value;
+                _ = OnEnvChange();
+            }
+        }
+    }
     protected bool loading = false;
     protected bool saving = false;
     protected bool publishing = false;
