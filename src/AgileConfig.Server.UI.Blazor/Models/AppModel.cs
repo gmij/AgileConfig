@@ -7,8 +7,8 @@ public class AppModel
     public string Secret { get; set; } = "";
     public string? Group { get; set; }
     public bool Inheritanced { get; set; }
-    public List<string>? InheritancedApps { get; set; }
-    public List<string>? InheritancedAppNames { get; set; }
+    public List<string> InheritancedApps { get; set; } = new();
+    public List<string> InheritancedAppNames { get; set; } = new();
     public bool Enabled { get; set; } = true;
     public DateTime? CreateTime { get; set; }
     public string? Creator { get; set; }
@@ -36,7 +36,7 @@ public class UserModel
     public string? Password { get; set; }
     public string? Email { get; set; }
     public bool Enabled { get; set; } = true;
-    public List<string>? Roles { get; set; }
+    public List<string> Roles { get; set; } = new();
     public DateTime? CreateTime { get; set; }
 }
 

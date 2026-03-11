@@ -52,7 +52,8 @@
             <Table TItem="ConfigModel"
                    DataSource="@configs"
                    Loading="@loading"
-                   @bind-SelectedRows="@selectedRows"
+                   SelectedRows="@selectedRows"
+                   SelectedRowsChanged="@((rows) => selectedRows = rows.ToList())"
                    Selection>
                 <ToolbarTemplate>
                     <Space>

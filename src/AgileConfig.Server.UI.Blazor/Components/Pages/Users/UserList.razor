@@ -83,7 +83,8 @@
             <FormItem Label="Roles">
                 <Select TItemValue="string"
                         TItem="string"
-                        @bind-Values="@formContext.Roles"
+                        Values="@formContext.Roles"
+                        ValuesChanged="@((values) => formContext.Roles = values.ToList())"
                         Mode="@SelectMode.Multiple"
                         Placeholder="Select roles">
                     <SelectOption TItemValue="string" TItem="string" Value="@("SuperAdmin")" Label="Super Admin" />

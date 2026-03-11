@@ -133,7 +133,8 @@
                 <FormItem Label="Link to Apps">
                     <Select TItemValue="string"
                             TItem="string"
-                            @bind-Values="@formContext.InheritancedApps"
+                            Values="@formContext.InheritancedApps"
+                            ValuesChanged="@((values) => formContext.InheritancedApps = values.ToList())"
                             Mode="@SelectMode.Multiple"
                             Placeholder="Select apps to inherit from">
                         @foreach (var app in publicApps)
