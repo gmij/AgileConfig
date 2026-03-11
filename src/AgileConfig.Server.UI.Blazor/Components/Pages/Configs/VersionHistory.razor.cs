@@ -52,18 +52,6 @@ public class VersionHistoryBase : ComponentBase
         }
     }
 
-    protected RenderFragment GetEditStatusTag(int editStatus)
-    {
-        return editStatus switch
-        {
-            0 => @<Tag Color="blue">Add</Tag>,
-            1 => @<Tag Color="gold">Edit</Tag>,
-            2 => @<Tag Color="red">Delete</Tag>,
-            10 => @<Tag>Committed</Tag>,
-            _ => @<Tag>Unknown</Tag>
-        };
-    }
-
     protected async Task ShowRollbackConfirm(PublishDetailNode publishNode)
     {
         var confirmResult = await ModalService.ConfirmAsync(new ConfirmOptions

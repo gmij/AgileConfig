@@ -36,7 +36,24 @@
                         <PropertyColumn Property="c => c.Key" Title="Key" Ellipsis />
                         <PropertyColumn Property="c => c.Value" Title="Value" Ellipsis />
                         <PropertyColumn Property="c => c.EditStatus" Title="Status">
-                            @GetEditStatusTag(context.EditStatus)
+                            @switch(context.EditStatus)
+                            {
+                                case 0:
+                                    <Tag Color="blue">Add</Tag>
+                                    break;
+                                case 1:
+                                    <Tag Color="gold">Edit</Tag>
+                                    break;
+                                case 2:
+                                    <Tag Color="red">Delete</Tag>
+                                    break;
+                                case 10:
+                                    <Tag>Committed</Tag>
+                                    break;
+                                default:
+                                    <Tag>Unknown</Tag>
+                                    break;
+                            }
                         </PropertyColumn>
                     </Table>
                     <div style="display: flex; justify-content: flex-end;">

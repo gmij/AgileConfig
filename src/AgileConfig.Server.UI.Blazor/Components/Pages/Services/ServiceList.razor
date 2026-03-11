@@ -1,92 +1,40 @@
 @page "/services"
-@using AgileConfig.Server.UI.Blazor.Services
-@using AgileConfig.Server.UI.Blazor.Models
-@inject ApiClient ApiClient
+@inherits ServiceListBase
 
 <PageTitle>Services - AgileConfig</PageTitle>
 
-<PageContainer Title="Service Registry">
-    <ChildContent>
-        <Table TItem="ServiceInfoModel"
-               DataSource="@services"
-               Loading="@loading">
-            <PropertyColumn Property="s => s.ServiceId" Title="Service ID" />
-            <PropertyColumn Property="s => s.ServiceName" Title="Service Name" />
-            <PropertyColumn Property="s => s.Ip" Title="IP Address" />
-            <PropertyColumn Property="s => s.Port" Title="Port" />
-            <PropertyColumn Property="s => s.Status" Title="Status">
-                @if (context.Status == "Healthy")
-                {
-                    <Badge Status="@PresetColor.Success.ToString()" Text="Healthy" />
-                }
-                else
-                {
-                    <Badge Status="@PresetColor.Error.ToString()" Text="Unhealthy" />
-                }
-            </PropertyColumn>
-            <PropertyColumn Property="s => s.RegisterTime" Title="Register Time">
-                @context.RegisterTime?.ToString("yyyy-MM-dd HH:mm:ss")
-            </PropertyColumn>
-            <PropertyColumn Property="s => s.HeartbeatTime" Title="Last Heartbeat">
-                @context.HeartbeatTime?.ToString("yyyy-MM-dd HH:mm:ss")
-            </PropertyColumn>
-            <ActionColumn Title="Actions">
-                <Popconfirm Title="@($"Unregister service {context.ServiceName}?")" OnConfirm="@(() => UnregisterService(context))">
-                    <Button Type="@ButtonType.Link" Danger>Unregister</Button>
-                </Popconfirm>
-            </ActionColumn>
-        </Table>
-    </ChildContent>
-</PageContainer>
+<div class="page-header">
+    <h1>Service Registry</h1>
+</div>
 
-@code {
-    private List<ServiceInfoModel> services = new();
-    private bool loading = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadServices();
-
-        var timer = new System.Threading.Timer(async _ =>
-        {
-            await InvokeAsync(async () =>
+<div class="page-content">
+    <Table TItem="ServiceInfoModel"
+           DataSource="@services"
+           Loading="@loading">
+        <PropertyColumn Property="s => s.ServiceId" Title="Service ID" />
+        <PropertyColumn Property="s => s.ServiceName" Title="Service Name" />
+        <PropertyColumn Property="s => s.Ip" Title="IP Address" />
+        <PropertyColumn Property="s => s.Port" Title="Port" />
+        <PropertyColumn Property="s => s.Status" Title="Status">
+            @if (context.Status == "Healthy")
             {
-                await LoadServices();
-                StateHasChanged();
-            });
-        }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
-    }
-
-    private async Task LoadServices()
-    {
-        loading = true;
-        StateHasChanged();
-
-        try
-        {
-            var response = await ApiClient.GetAsync<ApiResponse<List<ServiceInfoModel>>>("/api/service");
-            if (response?.Success == true && response.Data != null)
-            {
-                services = response.Data;
+                <Badge Status="@PresetColor.Success.ToString()" Text="Healthy" />
             }
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task UnregisterService(ServiceInfoModel service)
-    {
-        try
-        {
-            var response = await ApiClient.DeleteAsync($"/api/service/{service.ServiceId}");
-            if (response.IsSuccessStatusCode)
+            else
             {
-                await LoadServices();
+                <Badge Status="@PresetColor.Error.ToString()" Text="Unhealthy" />
             }
-        }
-        catch { }
-    }
-}
+        </PropertyColumn>
+        <PropertyColumn Property="s => s.RegisterTime" Title="Register Time">
+            @context.RegisterTime?.ToString("yyyy-MM-dd HH:mm:ss")
+        </PropertyColumn>
+        <PropertyColumn Property="s => s.HeartbeatTime" Title="Last Heartbeat">
+            @context.HeartbeatTime?.ToString("yyyy-MM-dd HH:mm:ss")
+        </PropertyColumn>
+        <ActionColumn Title="Actions">
+            <Popconfirm Title="@($"Unregister service {context.ServiceName}?")" OnConfirm="@(() => UnregisterService(context))">
+                <Button Type="@ButtonType.Link" Danger>Unregister</Button>
+            </Popconfirm>
+        </ActionColumn>
+    </Table>
+</div>

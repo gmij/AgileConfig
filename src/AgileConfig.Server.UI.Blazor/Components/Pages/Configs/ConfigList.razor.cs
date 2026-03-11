@@ -88,18 +88,6 @@ public class ConfigListBase : ComponentBase
         return waitPublishStatus.AddCount + waitPublishStatus.EditCount + waitPublishStatus.DeleteCount > 0;
     }
 
-    protected RenderFragment GetEditStatusTag(int editStatus)
-    {
-        return editStatus switch
-        {
-            0 => @<Tag Color="blue">New</Tag>,
-            1 => @<Tag Color="gold">Modified</Tag>,
-            2 => @<Tag Color="red">Deleted</Tag>,
-            10 => @<Tag>Published</Tag>,
-            _ => @<Tag>Unknown</Tag>
-        };
-    }
-
     protected void ShowAddModal()
     {
         isEditMode = false;

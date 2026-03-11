@@ -17,12 +17,7 @@ public class HomeBase : ComponentBase, IDisposable
 
     private Timer? _refreshTimer;
 
-    protected RenderFragment NodeValueTemplate => __builder =>
-    {
-        <text>
-            <span>@statistics.NodeOnlineCount / @statistics.NodeCount</span>
-        </text>
-    };
+    protected string GetNodeValueText() => $"{statistics.NodeOnlineCount} / {statistics.NodeCount}";
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,14 +71,6 @@ public class HomeBase : ComponentBase, IDisposable
         {
             loading = false;
         }
-    }
-
-    protected RenderFragment IconRender(string iconType)
-    {
-        return __builder =>
-        {
-            <Icon Type="@iconType" Style="color: #1890ff;" />
-        };
     }
 
     protected void NavigateToConfigs(AppModel app)

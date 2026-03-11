@@ -117,7 +117,24 @@
                     @context.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss")
                 </PropertyColumn>
                 <PropertyColumn Property="c => c.EditStatus" Title="Edit Status">
-                    @GetEditStatusTag(context.EditStatus)
+                    @switch(context.EditStatus)
+                    {
+                        case 0:
+                            <Tag Color="blue">New</Tag>
+                            break;
+                        case 1:
+                            <Tag Color="gold">Modified</Tag>
+                            break;
+                        case 2:
+                            <Tag Color="red">Deleted</Tag>
+                            break;
+                        case 10:
+                            <Tag>Published</Tag>
+                            break;
+                        default:
+                            <Tag>Unknown</Tag>
+                            break;
+                    }
                 </PropertyColumn>
                 <PropertyColumn Property="c => c.OnlineStatus" Title="Publish Status">
                     @if (context.OnlineStatus == 0)

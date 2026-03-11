@@ -15,32 +15,44 @@
                     <Card>
                         <Statistic TValue="int"
                                   Title="Applications"
-                                  Value="@statistics.AppCount"
-                                  Prefix="@IconRender(IconType.Outline.AppstoreAdd)" />
+                                  Value="@statistics.AppCount">
+                            <PrefixTemplate>
+                                <Icon Type="@IconType.Outline.AppstoreAdd" Style="color: #1890ff;" />
+                            </PrefixTemplate>
+                        </Statistic>
                     </Card>
                 </AntDesign.Col>
                 <AntDesign.Col Span="6">
                     <Card>
                         <Statistic TValue="int"
                                   Title="Configurations"
-                                  Value="@statistics.ConfigCount"
-                                  Prefix="@IconRender(IconType.Outline.Setting)" />
+                                  Value="@statistics.ConfigCount">
+                            <PrefixTemplate>
+                                <Icon Type="@IconType.Outline.Setting" Style="color: #1890ff;" />
+                            </PrefixTemplate>
+                        </Statistic>
                     </Card>
                 </AntDesign.Col>
                 <AntDesign.Col Span="6">
                     <Card>
                         <Statistic TValue="string"
                                   Title="Server Nodes"
-                                  ValueTemplate="@NodeValueTemplate"
-                                  Prefix="@IconRender(IconType.Outline.Cluster)" />
+                                  Value="@GetNodeValueText()">
+                            <PrefixTemplate>
+                                <Icon Type="@IconType.Outline.Cluster" Style="color: #1890ff;" />
+                            </PrefixTemplate>
+                        </Statistic>
                     </Card>
                 </AntDesign.Col>
                 <AntDesign.Col Span="6">
                     <Card>
                         <Statistic TValue="int"
                                   Title="Connected Clients"
-                                  Value="@statistics.ClientCount"
-                                  Prefix="@IconRender(IconType.Outline.ApiOutlined)" />
+                                  Value="@statistics.ClientCount">
+                            <PrefixTemplate>
+                                <Icon Type="@IconType.Outline.ApiOutlined" Style="color: #1890ff;" />
+                            </PrefixTemplate>
+                        </Statistic>
                     </Card>
                 </AntDesign.Col>
             </Row>
