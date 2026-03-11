@@ -31,6 +31,7 @@ export default {
   'menu.list.client-list': '客户端',
   'menu.list.service-list': '服务',
   'menu.list.logs-list': '日志',
+  'menu.list.backup-list': '备份与还原',
   'menu.list.basic-list': '标准列表',
   'menu.list.card-list': '卡片列表',
   'menu.list.search-list': '搜索列表',
