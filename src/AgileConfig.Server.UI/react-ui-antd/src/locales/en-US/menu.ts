@@ -59,4 +59,5 @@ export default {
   'menu.list.user-list': 'User',
   'menu.list.role-list': 'Role',
   'menu.list.logs-list': 'Log',
+  'menu.list.backup-list': 'Backup & Restore',
 };

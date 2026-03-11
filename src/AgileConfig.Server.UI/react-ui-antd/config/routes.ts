@@ -76,6 +76,10 @@
                 name: 'list.logs-list', icon: 'Bars', path: '/logs', component: './Logs',
                 category: 'Log'
               },
+              {
+                name: 'list.backup-list', icon: 'SaveOutlined', path: '/backup', component: './Backup',
+                category: 'Backup'
+              },
               { component: './404' },
             ],
           },
