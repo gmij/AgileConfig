@@ -1,5 +1,6 @@
 using AgileConfig.Server.UI.Blazor.Components;
 using AgileConfig.Server.UI.Blazor.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,16 +20,14 @@ builder.Services.AddScoped(sp =>
 });
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<WebSocketService>();
-builder.Services.AddScoped<AuthenticationService>();
 
-// Add session for authentication
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromHours(24);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
+// Add Authentication and Authorization
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
+    provider.GetRequiredService<CustomAuthenticationStateProvider>());
+builder.Services.AddScoped<AuthenticationService>();
 
 var app = builder.Build();
 
@@ -42,7 +41,6 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
-app.UseSession();
 app.UseAntiforgery();
 
 app.MapStaticAssets();

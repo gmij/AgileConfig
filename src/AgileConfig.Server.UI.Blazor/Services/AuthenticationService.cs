@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Text.Json;
 
 namespace AgileConfig.Server.UI.Blazor.Services;
@@ -7,18 +8,16 @@ public class AuthenticationService
 {
     private readonly ApiClient _apiClient;
     private readonly NavigationManager _navigationManager;
-    private string? _jwtToken;
-    private string? _currentUser;
+    private readonly CustomAuthenticationStateProvider _authStateProvider;
 
-    public event Action? OnAuthStateChanged;
-
-    public bool IsAuthenticated => !string.IsNullOrEmpty(_jwtToken);
-    public string? CurrentUser => _currentUser;
-
-    public AuthenticationService(ApiClient apiClient, NavigationManager navigationManager)
+    public AuthenticationService(
+        ApiClient apiClient,
+        NavigationManager navigationManager,
+        AuthenticationStateProvider authStateProvider)
     {
         _apiClient = apiClient;
         _navigationManager = navigationManager;
+        _authStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
     }
 
     public async Task<bool> LoginAsync(string username, string password)
@@ -38,14 +37,8 @@ public class AuthenticationService
 
                 if (result?.Success == true && !string.IsNullOrEmpty(result.Data?.Token))
                 {
-                    _jwtToken = result.Data.Token;
-                    _currentUser = username;
-                    _apiClient.SetAuthToken(_jwtToken);
-
-                    // Store in session storage (using JS interop in real implementation)
-                    // For now, keep in memory
-
-                    OnAuthStateChanged?.Invoke();
+                    // Store token using the authentication state provider
+                    await _authStateProvider.MarkUserAsAuthenticated(result.Data.Token, username);
                     return true;
                 }
             }
@@ -58,19 +51,16 @@ public class AuthenticationService
         }
     }
 
-    public void Logout()
+    public async Task Logout()
     {
-        _jwtToken = null;
-        _currentUser = null;
-        OnAuthStateChanged?.Invoke();
-        _navigationManager.NavigateTo("/login");
+        await _authStateProvider.MarkUserAsLoggedOut();
+        _navigationManager.NavigateTo("/login", true);
     }
 
     public async Task<bool> CheckAuthAsync()
     {
-        // In a real implementation, validate token with backend
-        // For now, just check if token exists
-        return await Task.FromResult(IsAuthenticated);
+        var authState = await _authStateProvider.GetAuthenticationStateAsync();
+        return authState.User.Identity?.IsAuthenticated ?? false;
     }
 
     private class JwtResponse
