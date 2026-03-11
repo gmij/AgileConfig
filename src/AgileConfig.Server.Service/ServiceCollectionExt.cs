@@ -29,6 +29,7 @@ public static class ServiceCollectionExt
         sc.AddScoped<IPermissionService, PermissionService>();
         sc.AddScoped<IRoleService, RoleService>();
         sc.AddScoped<IRegisterCenterService, RegisterCenterService>();
+        sc.AddScoped<IBackupService, BackupService>();
 
         sc.AddScoped<ConfigStatusUpdateEventHandlersRegister>();
         sc.AddScoped<ServiceInfoStatusUpdateEventHandlersRegister>();

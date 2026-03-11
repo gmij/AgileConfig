@@ -43,6 +43,11 @@ public static class Functions
 
     public const string Log_Read = "LOG_READ";
 
+    public const string Backup_Read = "BACKUP_READ";
+    public const string Backup_Create = "BACKUP_CREATE";
+    public const string Backup_Restore = "BACKUP_RESTORE";
+    public const string Backup_Delete = "BACKUP_DELETE";
+
     public static List<string> GetAllPermissions()
     {
         // SuperAdmin has all permissions
@@ -91,7 +96,13 @@ public static class Functions
             Service_Delete,
 
             // System permissions
-            Log_Read
+            Log_Read,
+
+            // Backup permissions
+            Backup_Read,
+            Backup_Create,
+            Backup_Restore,
+            Backup_Delete
         };
     }
 }
