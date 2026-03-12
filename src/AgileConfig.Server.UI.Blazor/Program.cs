@@ -14,8 +14,10 @@ builder.Services.AddAntDesign();
 // Add HTTP Client and Services
 builder.Services.AddScoped(sp =>
 {
-    var httpClient = new HttpClient();
     var config = sp.GetRequiredService<IConfiguration>();
+    var httpClient = new HttpClient();
+    var baseUrl = config["ApiBaseUrl"] ?? "http://localhost:5000";
+    httpClient.BaseAddress = new Uri(baseUrl);
     return httpClient;
 });
 builder.Services.AddScoped<ApiClient>();

@@ -57,4 +57,9 @@ public class Appsettings
     public static string OtlpMetricsHeaders => Global.Config["otlp:metrics:headers"];
 
     public static string OtlpInstanceId => Global.Config["otlp:instanceId"];
+
+    /// <summary>
+    ///     Gets the Blazor UI URL if configured, otherwise returns null.
+    /// </summary>
+    public static string GetBlazorUiUrl() => Global.Config["blazorUiUrl"];
 }
