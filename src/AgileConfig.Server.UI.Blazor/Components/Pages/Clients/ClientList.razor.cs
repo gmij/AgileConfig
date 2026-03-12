@@ -4,12 +4,22 @@ using Microsoft.AspNetCore.Components;
 
 namespace AgileConfig.Server.UI.Blazor.Components.Pages.Clients;
 
+public class ClientSearchModel
+{
+    public string? Id { get; set; }
+    public string? AppId { get; set; }
+    public string? Name { get; set; }
+    public string? Status { get; set; }
+}
+
 public class ClientListBase : ComponentBase, IDisposable
 {
     [Inject] protected ApiClient ApiClient { get; set; } = default!;
 
     protected List<ClientInfoModel> clients = new();
+    protected List<ClientInfoModel> filteredClients = new();
     protected bool loading = false;
+    protected ClientSearchModel searchModel = new();
 
     private Timer? _refreshTimer;
 
@@ -38,6 +48,7 @@ public class ClientListBase : ComponentBase, IDisposable
             if (response?.Success == true && response.Data != null)
             {
                 clients = response.Data;
+                ApplyFilters();
             }
         }
         catch (Exception ex)
@@ -49,6 +60,53 @@ public class ClientListBase : ComponentBase, IDisposable
             loading = false;
             StateHasChanged();
         }
+    }
+
+    protected void HandleSearch()
+    {
+        ApplyFilters();
+    }
+
+    protected void HandleReset()
+    {
+        searchModel = new ClientSearchModel();
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredClients = clients.Where(client =>
+        {
+            // Filter by client ID
+            if (!string.IsNullOrWhiteSpace(searchModel.Id) &&
+                !client.Id.Contains(searchModel.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Filter by app ID
+            if (!string.IsNullOrWhiteSpace(searchModel.AppId) &&
+                !client.AppId.Contains(searchModel.AppId, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Filter by name
+            if (!string.IsNullOrWhiteSpace(searchModel.Name) &&
+                !client.Name.Contains(searchModel.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Filter by status
+            if (!string.IsNullOrWhiteSpace(searchModel.Status) &&
+                !client.Status.Equals(searchModel.Status, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
+        }).ToList();
     }
 
     public void Dispose()

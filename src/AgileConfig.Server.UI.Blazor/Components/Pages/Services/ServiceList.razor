@@ -6,12 +6,45 @@
 <PageTitle>Services - AgileConfig</PageTitle>
 
 <div class="page-header">
-    <h1>Service Registry</h1>
+    <div class="page-header-content">
+        <h1>Service Registry</h1>
+    </div>
 </div>
 
 <div class="page-content">
+    <div class="search-panel">
+        <Form Model="@searchModel" Layout="@FormLayout.Inline">
+            <FormItem Label="Service ID">
+                <Input @bind-Value="@searchModel.ServiceId" Placeholder="Search by service ID" Style="width: 200px;" />
+            </FormItem>
+            <FormItem Label="Service Name">
+                <Input @bind-Value="@searchModel.ServiceName" Placeholder="Search by service name" Style="width: 200px;" />
+            </FormItem>
+            <FormItem Label="Status">
+                <Select TItemValue="string"
+                        TItem="string"
+                        @bind-Value="@searchModel.Status"
+                        Placeholder="All"
+                        Style="width: 150px;"
+                        AllowClear>
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Healthy")" Label="Healthy" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Unhealthy")" Label="Unhealthy" />
+                </Select>
+            </FormItem>
+            <FormItem>
+                <Space>
+                    <SpaceItem>
+                        <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Button OnClick="@HandleReset">Reset</Button>
+                    </SpaceItem>
+                </Space>
+            </FormItem>
+        </Form>
+    </div>
     <Table TItem="ServiceInfoModel"
-           DataSource="@services"
+           DataSource="@filteredServices"
            Loading="@loading">
         <PropertyColumn Property="s => s.ServiceId" Title="Service ID" />
         <PropertyColumn Property="s => s.ServiceName" Title="Service Name" />

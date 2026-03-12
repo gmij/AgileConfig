@@ -6,12 +6,48 @@
 <PageTitle>Client Connections - AgileConfig</PageTitle>
 
 <div class="page-header">
-    <h1>Client Connections</h1>
+    <div class="page-header-content">
+        <h1>Client Connections</h1>
+    </div>
 </div>
 
 <div class="page-content">
+    <div class="search-panel">
+        <Form Model="@searchModel" Layout="@FormLayout.Inline">
+            <FormItem Label="Client ID">
+                <Input @bind-Value="@searchModel.Id" Placeholder="Search by client ID" Style="width: 200px;" />
+            </FormItem>
+            <FormItem Label="App ID">
+                <Input @bind-Value="@searchModel.AppId" Placeholder="Search by app ID" Style="width: 200px;" />
+            </FormItem>
+            <FormItem Label="Name">
+                <Input @bind-Value="@searchModel.Name" Placeholder="Search by name" Style="width: 200px;" />
+            </FormItem>
+            <FormItem Label="Status">
+                <Select TItemValue="string"
+                        TItem="string"
+                        @bind-Value="@searchModel.Status"
+                        Placeholder="All"
+                        Style="width: 120px;"
+                        AllowClear>
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Online")" Label="Online" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Offline")" Label="Offline" />
+                </Select>
+            </FormItem>
+            <FormItem>
+                <Space>
+                    <SpaceItem>
+                        <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Button OnClick="@HandleReset">Reset</Button>
+                    </SpaceItem>
+                </Space>
+            </FormItem>
+        </Form>
+    </div>
     <Table TItem="ClientInfoModel"
-           DataSource="@clients"
+           DataSource="@filteredClients"
            Loading="@loading">
         <PropertyColumn Property="c => c.Id" Title="Client ID" />
         <PropertyColumn Property="c => c.AppId" Title="App ID" />
