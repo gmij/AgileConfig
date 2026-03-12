@@ -1,89 +1,74 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.Security.Claims;
-using System.Text.Json;
 
 namespace AgileConfig.Server.UI.Blazor.Services;
 
 public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
-    private readonly ProtectedSessionStorage _sessionStorage;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ApiClient _apiClient;
     private ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
 
     public CustomAuthenticationStateProvider(
-        ProtectedSessionStorage sessionStorage,
+        IHttpContextAccessor httpContextAccessor,
         ApiClient apiClient)
     {
-        _sessionStorage = sessionStorage;
+        _httpContextAccessor = httpContextAccessor;
         _apiClient = apiClient;
     }
 
-    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
+    public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         try
         {
-            var tokenResult = await _sessionStorage.GetAsync<string>("authToken");
-            var usernameResult = await _sessionStorage.GetAsync<string>("username");
+            var httpContext = _httpContextAccessor.HttpContext;
 
-            if (!tokenResult.Success || string.IsNullOrEmpty(tokenResult.Value))
+            if (httpContext?.User?.Identity?.IsAuthenticated == true)
             {
-                return new AuthenticationState(_anonymous);
+                // Extract token from claims
+                var tokenClaim = httpContext.User.FindFirst("token");
+                if (tokenClaim != null)
+                {
+                    _apiClient.SetAuthToken(tokenClaim.Value);
+                }
+
+                return Task.FromResult(new AuthenticationState(httpContext.User));
             }
 
-            var token = tokenResult.Value;
-            var username = usernameResult.Success ? usernameResult.Value : "Unknown";
-
-            // Set the auth token in the API client
-            _apiClient.SetAuthToken(token);
-
-            // Create claims from token
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, username ?? "Unknown"),
-                new Claim("token", token)
-            };
-
-            var identity = new ClaimsIdentity(claims, "jwt");
-            var user = new ClaimsPrincipal(identity);
-
-            return new AuthenticationState(user);
+            return Task.FromResult(new AuthenticationState(_anonymous));
         }
         catch
         {
-            return new AuthenticationState(_anonymous);
+            return Task.FromResult(new AuthenticationState(_anonymous));
         }
     }
 
-    public async Task MarkUserAsAuthenticated(string token, string username)
+    public Task<ClaimsPrincipal> CreateUserPrincipal(string token, string username)
     {
-        await _sessionStorage.SetAsync("authToken", token);
-        await _sessionStorage.SetAsync("username", username);
-
-        // Set the auth token in the API client
-        _apiClient.SetAuthToken(token);
-
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, username),
             new Claim("token", token)
         };
 
-        var identity = new ClaimsIdentity(claims, "jwt");
+        var identity = new ClaimsIdentity(claims, "Blazor.Cookie");
         var user = new ClaimsPrincipal(identity);
 
-        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+        return Task.FromResult(user);
     }
 
-    public async Task MarkUserAsLoggedOut()
+    public void NotifyUserAuthentication()
     {
-        await _sessionStorage.DeleteAsync("authToken");
-        await _sessionStorage.DeleteAsync("username");
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext?.User?.Identity?.IsAuthenticated == true)
+        {
+            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(httpContext.User)));
+        }
+    }
 
-        var identity = new ClaimsIdentity();
-        var user = new ClaimsPrincipal(identity);
-
-        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+    public void NotifyUserLoggedOut()
+    {
+        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_anonymous)));
     }
 }

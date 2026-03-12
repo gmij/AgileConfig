@@ -11,6 +11,9 @@ builder.Services.AddRazorComponents()
 // Add AntDesign
 builder.Services.AddAntDesign();
 
+// Add HTTP Context Accessor for cookie authentication
+builder.Services.AddHttpContextAccessor();
+
 // Add HTTP Client and Services
 builder.Services.AddScoped<AuthHttpHandler>();
 builder.Services.AddScoped(sp =>
@@ -28,16 +31,17 @@ builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<WebSocketService>();
 
 // Add Authentication and Authorization
-// For Blazor Web Apps with Interactive Server, we need authentication services
-// for the initial HTTP request handling, even though actual authentication
-// is managed via AuthenticationStateProvider for Blazor components
-builder.Services.AddAuthentication()
+// Configure cookie authentication as the default scheme
+builder.Services.AddAuthentication("Blazor.Cookie")
     .AddCookie("Blazor.Cookie", options =>
     {
         options.Cookie.Name = "Blazor.Cookie";
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/login";
         options.ExpireTimeSpan = TimeSpan.FromDays(1);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
