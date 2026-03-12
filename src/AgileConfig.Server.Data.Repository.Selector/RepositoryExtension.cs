@@ -2,6 +2,8 @@
 using AgileConfig.Server.Data.Abstraction.DbProvider;
 using AgileConfig.Server.Data.Repository.Freesql;
 using AgileConfig.Server.Data.Repository.Mongodb;
+using AgileConfig.Server.Data.Repository.EFCore;
+using AgileConfig.Server.Data.EFCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AgileConfig.Server.Data.Repository.Selector;
@@ -12,7 +14,8 @@ public static class RepositoryExtension
     private static readonly List<IRepositoryServiceRegister> _repositoryServiceRegisters = new()
     {
         new FreesqlRepositoryServiceRegister(),
-        new MongodbRepositoryServiceRegister()
+        new MongodbRepositoryServiceRegister(),
+        new EFCoreRepositoryServiceRegister()
     };
 
     public static IServiceCollection AddRepositories(this IServiceCollection sc)
@@ -28,9 +31,17 @@ public static class RepositoryExtension
 
         Console.WriteLine($"default db provider: {defaultProvider.Provider}");
 
+        // Register EF Core DbContext if the provider is EF Core
+        var register = GetRepositoryServiceRegister(defaultProvider.Provider);
+        if (register is EFCoreRepositoryServiceRegister)
+        {
+            sc.AddEFCoreDbContext();
+            ((EFCoreRepositoryServiceRegister)register).Register(sc);
+        }
+
         #region add default fixed repositories
 
-        GetRepositoryServiceRegister(defaultProvider.Provider).AddFixedRepositories(sc);
+        register.AddFixedRepositories(sc);
 
         #endregion
 
