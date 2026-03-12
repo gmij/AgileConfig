@@ -4,11 +4,19 @@ using Microsoft.AspNetCore.Components;
 
 namespace AgileConfig.Server.UI.Blazor.Components.Pages.Users;
 
+public class UserSearchModel
+{
+    public string? UserName { get; set; }
+    public string? Role { get; set; }
+    public bool? Enabled { get; set; }
+}
+
 public class UserListBase : ComponentBase
 {
     [Inject] protected ApiClient ApiClient { get; set; } = default!;
 
     protected List<UserModel> users = new();
+    protected List<UserModel> filteredUsers = new();
     protected bool loading = false;
     protected bool saving = false;
     protected int pageIndex = 1;
@@ -18,6 +26,8 @@ public class UserListBase : ComponentBase
     protected bool modalVisible = false;
     protected bool isEditMode = false;
     protected UserModel currentUser = new();
+
+    protected UserSearchModel searchModel = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -36,6 +46,7 @@ public class UserListBase : ComponentBase
             {
                 users = response.Data.Data ?? new();
                 total = response.Data.Total;
+                ApplyFilters();
             }
         }
         catch (Exception ex)
@@ -47,6 +58,45 @@ public class UserListBase : ComponentBase
             loading = false;
             StateHasChanged();
         }
+    }
+
+    protected void HandleSearch()
+    {
+        ApplyFilters();
+    }
+
+    protected void HandleReset()
+    {
+        searchModel = new UserSearchModel();
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredUsers = users.Where(user =>
+        {
+            // Filter by username
+            if (!string.IsNullOrWhiteSpace(searchModel.UserName) &&
+                !user.UserName.Contains(searchModel.UserName, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Filter by role
+            if (!string.IsNullOrWhiteSpace(searchModel.Role) &&
+                (user.Roles == null || !user.Roles.Contains(searchModel.Role)))
+            {
+                return false;
+            }
+
+            // Filter by enabled status
+            if (searchModel.Enabled.HasValue && user.Enabled != searchModel.Enabled.Value)
+            {
+                return false;
+            }
+
+            return true;
+        }).ToList();
     }
 
     protected void ShowAddModal()

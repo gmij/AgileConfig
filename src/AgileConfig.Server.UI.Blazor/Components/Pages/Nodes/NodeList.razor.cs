@@ -4,11 +4,18 @@ using Microsoft.AspNetCore.Components;
 
 namespace AgileConfig.Server.UI.Blazor.Components.Pages.Nodes;
 
+public class NodeSearchModel
+{
+    public string? Address { get; set; }
+    public int? Status { get; set; }
+}
+
 public class NodeListBase : ComponentBase, IDisposable
 {
     [Inject] protected ApiClient ApiClient { get; set; } = default!;
 
     protected List<ServerNodeModel> nodes = new();
+    protected List<ServerNodeModel> filteredNodes = new();
     protected bool loading = false;
     protected bool saving = false;
 
@@ -16,6 +23,8 @@ public class NodeListBase : ComponentBase, IDisposable
     protected bool isEditMode = false;
     protected ServerNodeModel currentNode = new();
     protected bool statusChecked = true;
+
+    protected NodeSearchModel searchModel = new();
 
     private Timer? _refreshTimer;
 
@@ -44,6 +53,7 @@ public class NodeListBase : ComponentBase, IDisposable
             if (response?.Success == true && response.Data != null)
             {
                 nodes = response.Data;
+                ApplyFilters();
             }
         }
         catch (Exception ex)
@@ -55,6 +65,38 @@ public class NodeListBase : ComponentBase, IDisposable
             loading = false;
             StateHasChanged();
         }
+    }
+
+    protected void HandleSearch()
+    {
+        ApplyFilters();
+    }
+
+    protected void HandleReset()
+    {
+        searchModel = new NodeSearchModel();
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredNodes = nodes.Where(node =>
+        {
+            // Filter by address
+            if (!string.IsNullOrWhiteSpace(searchModel.Address) &&
+                !node.Address.Contains(searchModel.Address, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Filter by status
+            if (searchModel.Status.HasValue && node.Status != searchModel.Status.Value)
+            {
+                return false;
+            }
+
+            return true;
+        }).ToList();
     }
 
     protected void ShowAddModal()

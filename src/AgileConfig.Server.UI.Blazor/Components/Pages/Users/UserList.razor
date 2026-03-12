@@ -6,21 +6,67 @@
 <PageTitle>Users - AgileConfig</PageTitle>
 
 <div class="page-header">
-    <h1>User Management</h1>
+    <div class="page-header-content">
+        <h1>User Management</h1>
+        <div class="page-header-extra">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+                        Add User
+                    </Button>
+                </SpaceItem>
+            </Space>
+        </div>
+    </div>
 </div>
 
 <div class="page-content">
+    <div class="search-panel">
+        <Form Model="@searchModel" Layout="@FormLayout.Inline">
+            <FormItem Label="Username">
+                <Input @bind-Value="@searchModel.UserName" Placeholder="Search by username" Style="width: 200px;" />
+            </FormItem>
+            <FormItem Label="Role">
+                <Select TItemValue="string"
+                        TItem="string"
+                        @bind-Value="@searchModel.Role"
+                        Placeholder="All"
+                        Style="width: 150px;"
+                        AllowClear>
+                    <SelectOption TItemValue="string" TItem="string" Value="@("SuperAdmin")" Label="Super Admin" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Administrator")" Label="Administrator" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Operator")" Label="Operator" />
+                </Select>
+            </FormItem>
+            <FormItem Label="Status">
+                <Select TItemValue="bool?"
+                        TItem="string"
+                        @bind-Value="@searchModel.Enabled"
+                        Placeholder="All"
+                        Style="width: 120px;"
+                        AllowClear>
+                    <SelectOption TItemValue="bool?" TItem="string" Value="@(true)" Label="Enabled" />
+                    <SelectOption TItemValue="bool?" TItem="string" Value="@(false)" Label="Disabled" />
+                </Select>
+            </FormItem>
+            <FormItem>
+                <Space>
+                    <SpaceItem>
+                        <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Button OnClick="@HandleReset">Reset</Button>
+                    </SpaceItem>
+                </Space>
+            </FormItem>
+        </Form>
+    </div>
     <Table TItem="UserModel"
-           DataSource="@users"
+           DataSource="@filteredUsers"
            Loading="@loading"
            @bind-PageIndex="@pageIndex"
            @bind-PageSize="@pageSize"
            Total="@total">
-        <ToolbarTemplate>
-            <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
-                Add User
-            </Button>
-        </ToolbarTemplate>
         <PropertyColumn Property="u => u.UserName" Title="Username" />
         <PropertyColumn Property="u => u.Email" Title="Email" />
         <PropertyColumn Property="u => u.Roles" Title="Roles">
