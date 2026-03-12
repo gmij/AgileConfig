@@ -24,6 +24,17 @@ builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<WebSocketService>();
 
 // Add Authentication and Authorization
+// For Blazor Web Apps with Interactive Server, we need authentication services
+// for the initial HTTP request handling, even though actual authentication
+// is managed via AuthenticationStateProvider for Blazor components
+builder.Services.AddAuthentication()
+    .AddCookie("Blazor.Cookie", options =>
+    {
+        options.Cookie.Name = "Blazor.Cookie";
+        options.LoginPath = "/login";
+        options.AccessDeniedPath = "/login";
+        options.ExpireTimeSpan = TimeSpan.FromDays(1);
+    });
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
@@ -42,6 +53,11 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+
+// Authentication and Authorization middleware
+// Required for Blazor Web Apps to handle [Authorize] attributes on initial page loads
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 
