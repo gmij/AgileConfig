@@ -30,13 +30,19 @@
                     <MenuItem Key="clients" RouterLink="/clients" Icon="@IconType.Outline.Api">
                         Clients
                     </MenuItem>
-                    <SubMenu Key="system" Title="System">
-                        <MenuItem Key="users" RouterLink="/users" Icon="@IconType.Outline.User">
-                            Users
-                        </MenuItem>
-                        <MenuItem Key="logs" RouterLink="/logs" Icon="@IconType.Outline.FileText">
-                            Logs
-                        </MenuItem>
+                    <SubMenu Key="system">
+                        <TitleTemplate>
+                            <Icon Type="@IconType.Outline.Setting" />
+                            <span>System</span>
+                        </TitleTemplate>
+                        <ChildContent>
+                            <MenuItem Key="users" RouterLink="/users" Icon="@IconType.Outline.User">
+                                Users
+                            </MenuItem>
+                            <MenuItem Key="logs" RouterLink="/logs" Icon="@IconType.Outline.FileText">
+                                Logs
+                            </MenuItem>
+                        </ChildContent>
                     </SubMenu>
                 </Menu>
             </Sider>
