@@ -12,10 +12,14 @@ builder.Services.AddRazorComponents()
 builder.Services.AddAntDesign();
 
 // Add HTTP Client and Services
+builder.Services.AddScoped<AuthHttpHandler>();
 builder.Services.AddScoped(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
-    var httpClient = new HttpClient();
+    var handler = sp.GetRequiredService<AuthHttpHandler>();
+    handler.InnerHandler = new HttpClientHandler();
+
+    var httpClient = new HttpClient(handler);
     var baseUrl = config["ApiBaseUrl"] ?? "http://localhost:5000";
     httpClient.BaseAddress = new Uri(baseUrl);
     return httpClient;
