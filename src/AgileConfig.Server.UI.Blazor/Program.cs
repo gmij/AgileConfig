@@ -11,9 +11,6 @@ builder.Services.AddRazorComponents()
 // Add AntDesign
 builder.Services.AddAntDesign();
 
-// Add HTTP Context Accessor for cookie authentication
-builder.Services.AddHttpContextAccessor();
-
 // Add HTTP Client and Services
 builder.Services.AddScoped<AuthHttpHandler>();
 builder.Services.AddScoped(sp =>
@@ -31,18 +28,6 @@ builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<WebSocketService>();
 
 // Add Authentication and Authorization
-// Configure cookie authentication as the default scheme
-builder.Services.AddAuthentication("Blazor.Cookie")
-    .AddCookie("Blazor.Cookie", options =>
-    {
-        options.Cookie.Name = "Blazor.Cookie";
-        options.LoginPath = "/login";
-        options.AccessDeniedPath = "/login";
-        options.ExpireTimeSpan = TimeSpan.FromDays(1);
-        options.SlidingExpiration = true;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-    });
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
@@ -61,11 +46,6 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-
-// Authentication and Authorization middleware
-// Required for Blazor Web Apps to handle [Authorize] attributes on initial page loads
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.UseAntiforgery();
 
