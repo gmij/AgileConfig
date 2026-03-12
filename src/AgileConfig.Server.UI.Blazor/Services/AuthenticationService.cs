@@ -24,8 +24,7 @@ public class AuthenticationService
     {
         try
         {
-            _apiClient.SetBasicAuth(username, password);
-            var response = await _apiClient.PostAsync("/api/admin/jwt", new { });
+            var response = await _apiClient.PostAsync("/admin/jwt/login", new { userName = username, password = password });
 
             if (response.IsSuccessStatusCode)
             {
@@ -35,10 +34,10 @@ public class AuthenticationService
                     PropertyNameCaseInsensitive = true
                 });
 
-                if (result?.Success == true && !string.IsNullOrEmpty(result.Data?.Token))
+                if (result?.Status == "ok" && !string.IsNullOrEmpty(result.Token))
                 {
                     // Store token using the authentication state provider
-                    await _authStateProvider.MarkUserAsAuthenticated(result.Data.Token, username);
+                    await _authStateProvider.MarkUserAsAuthenticated(result.Token, username);
                     return true;
                 }
             }
@@ -65,13 +64,8 @@ public class AuthenticationService
 
     private class JwtResponse
     {
-        public bool Success { get; set; }
-        public string? Message { get; set; }
-        public JwtData? Data { get; set; }
-    }
-
-    private class JwtData
-    {
+        public string Status { get; set; } = "";
         public string Token { get; set; } = "";
+        public string Type { get; set; } = "";
     }
 }
