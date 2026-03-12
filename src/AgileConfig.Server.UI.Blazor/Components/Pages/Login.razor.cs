@@ -1,5 +1,6 @@
 using AgileConfig.Server.UI.Blazor.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace AgileConfig.Server.UI.Blazor.Components.Pages;
 
@@ -40,7 +41,7 @@ public class LoginBase : ComponentBase
         }
     }
 
-    protected async Task OnFinish()
+    protected async Task OnFinish(EditContext editContext)
     {
         isLoading = true;
         errorMessage = null;
