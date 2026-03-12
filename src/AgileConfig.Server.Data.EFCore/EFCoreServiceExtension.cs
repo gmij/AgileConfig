@@ -27,6 +27,9 @@ public static class EFCoreServiceExtension
             case "sqlserver":
                 options.UseSqlServer(connectionString);
                 break;
+            case "mysql":
+                options.UseMySQL(connectionString);
+                break;
             case "npgsql":
             case "postgresql":
                 options.UseNpgsql(connectionString);
@@ -39,7 +42,7 @@ public static class EFCoreServiceExtension
                 options.UseSqlite(connectionString);
                 break;
             default:
-                throw new NotSupportedException($"Database provider '{provider}' is not supported by EF Core in this project. Supported providers: sqlserver, postgresql (npgsql), sqlite");
+                throw new NotSupportedException($"Database provider '{provider}' is not supported by EF Core in this project. Supported providers: sqlserver, mysql, postgresql (npgsql), sqlite");
         }
     }
 }

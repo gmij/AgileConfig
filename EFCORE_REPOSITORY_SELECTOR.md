@@ -24,7 +24,7 @@ The repository selector pattern allows AgileConfig to support multiple data pers
 4. **EFCoreServiceExtension** (`AgileConfig.Server.Data.EFCore`)
    - Provides `AddEFCoreDbContext()` extension method
    - Configures DbContext with appropriate database provider
-   - Supports: SQL Server, PostgreSQL, SQLite
+   - Supports: SQL Server, MySQL, PostgreSQL, SQLite
 
 ## Configuration
 
@@ -55,10 +55,9 @@ When using EF Core, you can specify these provider names:
 
 - `"efcore"` - Generic EF Core (defaults to SQLite if connection string doesn't specify)
 - `"sqlserver"` - Microsoft SQL Server
+- `"mysql"` - MySQL (using MySql.EntityFrameworkCore 10.0.1)
 - `"npgsql"` or `"postgresql"` - PostgreSQL
 - `"sqlite"` - SQLite
-
-**Note**: MySQL is not supported in EF Core 10.0 because no MySQL provider has released an EF Core 10.0 compatible version yet. See `MYSQL_DRIVER_ANALYSIS.md` for details.
 
 ## How It Works
 
@@ -80,6 +79,8 @@ When using EF Core, you can specify these provider names:
      ```csharp
      case "sqlserver":
          options.UseSqlServer(connectionString);
+     case "mysql":
+         options.UseMySQL(connectionString);
      case "npgsql":
          options.UseNpgsql(connectionString);
      case "sqlite":
@@ -138,6 +139,9 @@ dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore --db
 # Test with SQL Server
 dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=sqlserver --db:conn="Server=localhost;..."
 
+# Test with MySQL
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=mysql --db:conn="Server=localhost;Database=agileconfig;..."
+
 # Test with PostgreSQL
 dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=npgsql --db:conn="Host=localhost;..."
 ```
@@ -149,12 +153,12 @@ dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=npgsql --db
 - Check `IsSuit4Provider()` implementation
 
 **Error: "Database provider '[provider]' is not supported by EF Core"**
-- Ensure the database type is supported (sqlserver, npgsql, sqlite)
-- MySQL is not supported in EF Core 10.0 - see `MYSQL_DRIVER_ANALYSIS.md`
+- Ensure the database type is supported (sqlserver, mysql, npgsql, sqlite)
+- Verify the database provider package is installed
 
 **DbContext not configured correctly**
 - Check connection string format for your database
-- Verify NuGet packages are installed (Microsoft.EntityFrameworkCore.SqlServer, etc.)
+- Verify NuGet packages are installed (Microsoft.EntityFrameworkCore.SqlServer, MySql.EntityFrameworkCore, etc.)
 - Ensure `AddEFCoreDbContext()` is called before `Register()`
 
 ## References
