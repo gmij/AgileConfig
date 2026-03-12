@@ -41,10 +41,6 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
-// Add authentication and authorization middleware
-app.UseAuthentication();
-app.UseAuthorization();
-
 app.UseAntiforgery();
 
 app.MapStaticAssets();
