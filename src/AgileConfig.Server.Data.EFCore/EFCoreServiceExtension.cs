@@ -22,31 +22,10 @@ public static class EFCoreServiceExtension
 
     private static void ConfigureDbContext(DbContextOptionsBuilder options, string provider, string connectionString)
     {
-        // Extract the actual database type from the provider string
-        // Supports formats:
-        // 1. "efcore:mysql" - explicit EF Core with MySQL
-        // 2. "efcore:sqlserver" - explicit EF Core with SQL Server
-        // 3. "efcore:postgresql" or "efcore:npgsql" - explicit EF Core with PostgreSQL
-        // 4. "efcore:sqlite" - explicit EF Core with SQLite
-        // 5. "efcore" - defaults to SQLite
+        // The provider parameter now contains the database type (e.g., "mysql", "sqlserver", "postgresql", "sqlite")
+        // The ORMProvider field in configuration determines which ORM to use (freesql, efcore, mongodb)
 
-        string dbType = "sqlite"; // default
-        if (provider.Contains(":"))
-        {
-            var parts = provider.Split(':', 2);
-            if (parts.Length == 2)
-            {
-                dbType = parts[1].Trim().ToLower();
-            }
-        }
-        else if (provider.Equals("efcore", StringComparison.OrdinalIgnoreCase))
-        {
-            dbType = "sqlite"; // default when just "efcore"
-        }
-        else
-        {
-            dbType = provider.ToLower();
-        }
+        string dbType = provider.ToLower();
 
         switch (dbType)
         {
@@ -64,7 +43,7 @@ public static class EFCoreServiceExtension
                 options.UseSqlite(connectionString);
                 break;
             default:
-                throw new NotSupportedException($"Database type '{dbType}' from provider '{provider}' is not supported by EF Core. Supported types: sqlserver, mysql, postgresql (npgsql), sqlite. Use format 'efcore:dbtype' like 'efcore:mysql' or 'efcore:sqlserver'.");
+                throw new NotSupportedException($"Database type '{dbType}' is not supported by EF Core. Supported types: sqlserver, mysql, postgresql (npgsql), sqlite.");
         }
     }
 }

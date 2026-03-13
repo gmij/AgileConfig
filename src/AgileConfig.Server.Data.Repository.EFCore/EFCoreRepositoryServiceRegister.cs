@@ -8,10 +8,8 @@ public class EFCoreRepositoryServiceRegister : IRepositoryServiceRegister
 {
     public bool IsSuit4Provider(string provider)
     {
-        // Support both "efcore" and "efcore:dbtype" formats
-        // Examples: "efcore", "efcore:mysql", "efcore:sqlserver", "efcore:postgresql", "efcore:sqlite"
-        return provider.Equals("efcore", StringComparison.OrdinalIgnoreCase) ||
-               provider.StartsWith("efcore:", StringComparison.OrdinalIgnoreCase);
+        // Check if ORM provider is "efcore"
+        return provider.Equals("efcore", StringComparison.OrdinalIgnoreCase);
     }
 
     public void AddFixedRepositories(IServiceCollection sc)

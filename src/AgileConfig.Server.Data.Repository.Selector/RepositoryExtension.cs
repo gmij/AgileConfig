@@ -29,10 +29,10 @@ public static class RepositoryExtension
 
         if (string.IsNullOrEmpty(defaultProvider.Provider)) throw new ArgumentNullException(nameof(defaultProvider));
 
-        Console.WriteLine($"default db provider: {defaultProvider.Provider}");
+        Console.WriteLine($"default db provider: {defaultProvider.Provider}, ORM provider: {defaultProvider.ORMProvider}");
 
-        // Register EF Core DbContext if the provider is EF Core
-        var register = GetRepositoryServiceRegister(defaultProvider.Provider);
+        // Register EF Core DbContext if the ORM provider is EF Core
+        var register = GetRepositoryServiceRegister(defaultProvider.ORMProvider);
         if (register is EFCoreRepositoryServiceRegister)
         {
             sc.AddEFCoreDbContext();
@@ -51,14 +51,14 @@ public static class RepositoryExtension
         {
             var envDbConfig = dbConfigInfoFactory.GetConfigInfo(env);
 
-            return GetRepositoryServiceRegister(envDbConfig.Provider).GetServiceByEnv<IUow>(sp, env);
+            return GetRepositoryServiceRegister(envDbConfig.ORMProvider).GetServiceByEnv<IUow>(sp, env);
         });
 
         sc.AddScoped<Func<string, IConfigPublishedRepository>>(sp => env =>
         {
             var envDbConfig = dbConfigInfoFactory.GetConfigInfo(env);
 
-            return GetRepositoryServiceRegister(envDbConfig.Provider)
+            return GetRepositoryServiceRegister(envDbConfig.ORMProvider)
                 .GetServiceByEnv<IConfigPublishedRepository>(sp, env);
         });
 
@@ -66,14 +66,14 @@ public static class RepositoryExtension
         {
             var envDbConfig = dbConfigInfoFactory.GetConfigInfo(env);
 
-            return GetRepositoryServiceRegister(envDbConfig.Provider).GetServiceByEnv<IConfigRepository>(sp, env);
+            return GetRepositoryServiceRegister(envDbConfig.ORMProvider).GetServiceByEnv<IConfigRepository>(sp, env);
         });
 
         sc.AddScoped<Func<string, IPublishDetailRepository>>(sp => env =>
         {
             var envDbConfig = dbConfigInfoFactory.GetConfigInfo(env);
 
-            return GetRepositoryServiceRegister(envDbConfig.Provider)
+            return GetRepositoryServiceRegister(envDbConfig.ORMProvider)
                 .GetServiceByEnv<IPublishDetailRepository>(sp, env);
         });
 
@@ -81,7 +81,7 @@ public static class RepositoryExtension
         {
             var envDbConfig = dbConfigInfoFactory.GetConfigInfo(env);
 
-            return GetRepositoryServiceRegister(envDbConfig.Provider)
+            return GetRepositoryServiceRegister(envDbConfig.ORMProvider)
                 .GetServiceByEnv<IPublishTimelineRepository>(sp, env);
         });
 
@@ -90,12 +90,12 @@ public static class RepositoryExtension
         return sc;
     }
 
-    private static IRepositoryServiceRegister GetRepositoryServiceRegister(string provider)
+    private static IRepositoryServiceRegister GetRepositoryServiceRegister(string ormProvider)
     {
         foreach (var register in _repositoryServiceRegisters)
-            if (register.IsSuit4Provider(provider))
+            if (register.IsSuit4Provider(ormProvider))
                 return register;
 
-        throw new ArgumentException($"[{provider}] is not a supported provider.");
+        throw new ArgumentException($"[{ormProvider}] is not a supported ORM provider.");
     }
 }

@@ -6,4 +6,9 @@ public interface IDbConfigInfo
     string Env { get; }
 
     string Provider { get; }
+
+    /// <summary>
+    /// ORM provider: "freesql" (default), "efcore", or "mongodb"
+    /// </summary>
+    string ORMProvider { get; }
 }

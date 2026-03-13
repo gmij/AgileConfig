@@ -13,13 +13,13 @@ The repository selector pattern allows AgileConfig to support multiple data pers
 
 2. **EFCoreRepositoryServiceRegister** (`AgileConfig.Server.Data.Repository.EFCore`)
    - Implements registration logic for EF Core repositories
-   - Recognizes provider formats: `"efcore"` or `"efcore:dbtype"` (case-insensitive)
+   - Recognizes ORM provider: `"efcore"` (case-insensitive)
    - Registers all repositories and Unit of Work
 
 3. **RepositoryExtension** (`AgileConfig.Server.Data.Repository.Selector`)
    - Central registration point
    - Maintains list of available repository service registers
-   - Routes to appropriate provider based on configuration
+   - Routes to appropriate ORM provider based on configuration
 
 4. **EFCoreServiceExtension** (`AgileConfig.Server.Data.EFCore`)
    - Provides `AddEFCoreDbContext()` extension method
@@ -33,15 +33,18 @@ The repository selector pattern allows AgileConfig to support multiple data pers
 ```json
 {
   "db": {
-    "provider": "efcore:mysql",  // Use EF Core with MySQL
+    "ormProvider": "efcore",  // ORM provider: "freesql" (default), "efcore", or "mongodb"
+    "provider": "mysql",      // Database type: sqlite, mysql, sqlserver, npgsql, postgresql, oracle
     "conn": "Server=localhost;Database=agileconfig;User=root;Password=pass;",
     "env": {
       "TEST": {
-        "provider": "efcore:sqlserver",  // SQL Server for TEST env
+        "ormProvider": "efcore",  // Use EF Core for TEST env
+        "provider": "sqlserver",  // SQL Server database
         "conn": "Server=localhost;Database=AgileConfig_Test;..."
       },
       "PROD": {
-        "provider": "efcore:postgresql",  // PostgreSQL for PROD env
+        "ormProvider": "freesql", // Use FreeSql for PROD env
+        "provider": "postgresql", // PostgreSQL database
         "conn": "Host=localhost;Database=AgileConfig_Prod;..."
       }
     }
@@ -49,23 +52,16 @@ The repository selector pattern allows AgileConfig to support multiple data pers
 }
 ```
 
-**Note**: You can also use just `"efcore"` which will default to SQLite.
+### Configuration Fields
 
-### Supported Provider Formats
+**ormProvider**: Specifies which ORM framework to use
+- `"freesql"` - Use FreeSql ORM (default if not specified)
+- `"efcore"` - Use Entity Framework Core
+- `"mongodb"` - Use MongoDB driver
 
-When using EF Core, you can specify the provider in two formats:
-
-**Format 1: Colon-separated format (Recommended)**
-- `"efcore:mysql"` - EF Core with MySQL
-- `"efcore:sqlserver"` - EF Core with SQL Server
-- `"efcore:postgresql"` or `"efcore:npgsql"` - EF Core with PostgreSQL
-- `"efcore:sqlite"` - EF Core with SQLite
-
-**Format 2: Plain format**
-- `"efcore"` - EF Core with default (SQLite)
-
-**Why use the colon-separated format?**
-The colon-separated format explicitly specifies which database type to use with EF Core, avoiding confusion with FreeSql provider names. This ensures that the correct ORM and database combination is selected.
+**provider**: Specifies the database type
+- For FreeSql/EF Core: `sqlite`, `mysql`, `sqlserver`, `npgsql`, `postgresql`, `oracle`
+- For MongoDB: `mongodb`
 
 ## How It Works
 
@@ -74,7 +70,7 @@ The colon-separated format explicitly specifies which database type to use with 
 1. **Startup.cs** calls `services.AddRepositories()`
 2. **RepositoryExtension.AddRepositories()**:
    - Reads database configuration from `IDbConfigInfoFactory`
-   - Calls `GetRepositoryServiceRegister(provider)` to find matching register
+   - Calls `GetRepositoryServiceRegister(ormProvider)` to find matching register based on `ormProvider` field
    - If EF Core is selected:
      - Calls `sc.AddEFCoreDbContext()` to register DbContext
      - Calls `register.Register(sc)` to register repositories
@@ -82,7 +78,7 @@ The colon-separated format explicitly specifies which database type to use with 
    - Registers factory functions for environment-specific repositories
 
 3. **EFCoreServiceExtension.AddEFCoreDbContext()**:
-   - Gets database provider and connection string from configuration
+   - Gets database provider (database type) and connection string from configuration
    - Configures `DbContextOptionsBuilder` based on provider:
      ```csharp
      case "sqlserver":
@@ -90,6 +86,7 @@ The colon-separated format explicitly specifies which database type to use with 
      case "mysql":
          options.UseMySQL(connectionString);
      case "npgsql":
+     case "postgresql":
          options.UseNpgsql(connectionString);
      case "sqlite":
          options.UseSqlite(connectionString);
@@ -116,55 +113,20 @@ The colon-separated format explicitly specifies which database type to use with 
 ```csharp
 public bool IsSuit4Provider(string provider)
 {
-    // Support both "efcore" and "efcore:dbtype" formats
-    // Examples: "efcore", "efcore:mysql", "efcore:sqlserver", "efcore:postgresql", "efcore:sqlite"
-    return provider.Equals("efcore", StringComparison.OrdinalIgnoreCase) ||
-           provider.StartsWith("efcore:", StringComparison.OrdinalIgnoreCase);
+    // Check if ORM provider is "efcore"
+    return provider.Equals("efcore", StringComparison.OrdinalIgnoreCase);
 }
 ```
 
-The `EFCoreRepositoryServiceRegister` matches when:
-- Provider is exactly `"efcore"` (case-insensitive) - defaults to SQLite
-- Provider starts with `"efcore:"` (case-insensitive) - uses specified database type
+The `EFCoreRepositoryServiceRegister` matches when `ormProvider` is exactly `"efcore"` (case-insensitive).
 
-### Database Type Extraction
+### ORM Provider to Repository Register Mapping
 
-The database type is extracted in `EFCoreServiceExtension.ConfigureDbContext()`:
+- `ormProvider: "freesql"` → `FreesqlRepositoryServiceRegister`
+- `ormProvider: "efcore"` → `EFCoreRepositoryServiceRegister`
+- `ormProvider: "mongodb"` → `MongodbRepositoryServiceRegister`
 
-```csharp
-string dbType = "sqlite"; // default
-if (provider.Contains(":"))
-{
-    var parts = provider.Split(':', 2);
-    if (parts.Length == 2)
-    {
-        dbType = parts[1].Trim().ToLower();
-    }
-}
-else if (provider.Equals("efcore", StringComparison.OrdinalIgnoreCase))
-{
-    dbType = "sqlite"; // default when just "efcore"
-}
-
-switch (dbType)
-{
-    case "sqlserver":
-        options.UseSqlServer(connectionString);
-        break;
-    case "mysql":
-        options.UseMySQL(connectionString);
-        break;
-    case "npgsql":
-    case "postgresql":
-        options.UseNpgsql(connectionString);
-        break;
-    case "sqlite":
-        options.UseSqlite(connectionString);
-        break;
-    default:
-        throw new NotSupportedException($"Database type '{dbType}' from provider '{provider}' is not supported...");
-}
-```
+The `provider` field specifies the database type (mysql, sqlite, sqlserver, etc.) and is used by the selected ORM to configure the appropriate database driver.
 
 ## Adding a New Repository Provider
 
@@ -178,41 +140,55 @@ To add a new repository provider (e.g., Dapper, LiteDB):
 
 ## Testing
 
-Test the repository selector by setting different providers in appsettings:
+Test the repository selector by setting different configurations in appsettings:
 
 ```bash
-# Test with SQLite (default)
-dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore --db:conn="Data Source=test.db"
+# Test with SQLite and FreeSql (default)
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=sqlite --db:conn="Data Source=test.db"
 
-# Test with SQLite (explicit)
-dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore:sqlite --db:conn="Data Source=test.db"
+# Test with SQLite and EF Core
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:ormProvider=efcore --db:provider=sqlite --db:conn="Data Source=test.db"
 
-# Test with SQL Server
-dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore:sqlserver --db:conn="Server=localhost;..."
+# Test with SQL Server and EF Core
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:ormProvider=efcore --db:provider=sqlserver --db:conn="Server=localhost;..."
 
-# Test with MySQL
-dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore:mysql --db:conn="Server=localhost;Database=agileconfig;..."
+# Test with MySQL and EF Core
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:ormProvider=efcore --db:provider=mysql --db:conn="Server=localhost;Database=agileconfig;..."
 
-# Test with PostgreSQL
-dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore:postgresql --db:conn="Host=localhost;..."
+# Test with PostgreSQL and FreeSql
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:ormProvider=freesql --db:provider=npgsql --db:conn="Host=localhost;..."
+
+# Test with MongoDB
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:ormProvider=mongodb --db:provider=mongodb --db:conn="mongodb://localhost:27017/agileconfig"
 ```
 
-**Important**: Do NOT use plain database names like `"mysql"` or `"sqlserver"` when you want to use EF Core, as these will be matched by FreeSql first. Always use the `"efcore:dbtype"` format for EF Core.
+**Configuration via Environment Variables:**
+```bash
+export DB__ORMPROVIDER=efcore
+export DB__PROVIDER=mysql
+export DB__CONN="Server=localhost;Database=agileconfig;User=root;Password=pass;"
+dotnet run --project src/AgileConfig.Server.Apisite
+```
 
 ## Troubleshooting
 
-**Error: "[provider] is not a supported provider"**
-- Ensure the provider name matches one registered in `_repositoryServiceRegisters`
-- Check `IsSuit4Provider()` implementation
+**Error: "[ormProvider] is not a supported ORM provider"**
+- Ensure the `ormProvider` field is set to "freesql", "efcore", or "mongodb"
+- Check `IsSuit4Provider()` implementation in the repository service register
 
-**Error: "Database provider '[provider]' is not supported by EF Core"**
-- Ensure the database type is supported (sqlserver, mysql, npgsql, sqlite)
-- Verify the database provider package is installed
+**Error: "Database type '[dbType]' is not supported by EF Core"**
+- Ensure the `provider` field is set to a supported database type (sqlserver, mysql, npgsql, postgresql, sqlite)
+- Verify the database provider package is installed (Microsoft.EntityFrameworkCore.SqlServer, MySql.EntityFrameworkCore, etc.)
 
 **DbContext not configured correctly**
 - Check connection string format for your database
-- Verify NuGet packages are installed (Microsoft.EntityFrameworkCore.SqlServer, MySql.EntityFrameworkCore, etc.)
+- Verify NuGet packages are installed
 - Ensure `AddEFCoreDbContext()` is called before `Register()`
+
+**ORM Provider not being used**
+- Verify `ormProvider` field is set correctly in appsettings.json
+- Check that `ormProvider` defaults to "freesql" if not specified
+- Ensure the configuration is loaded properly (check startup logs: "default db provider: ..., ORM provider: ...")
 
 ## References
 
