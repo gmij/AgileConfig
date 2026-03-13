@@ -1,6 +1,7 @@
 @page "/apps"
 @attribute [Authorize]
 @inherits AppListBase
+@using AgileConfig.Server.Apisite.Client.Models
 @using AgileConfig.Server.UI.Blazor.Models
 
 <PageTitle>Applications - AgileConfig</PageTitle>
@@ -24,7 +25,7 @@
 </div>
 
 <div class="page-content">
-    <Table TItem="AppModel"
+    <Table TItem="AppInfo"
            DataSource="@apps"
            Loading="@loading"
            @bind-PageIndex="@pageIndex"
@@ -156,7 +157,7 @@
        OnCancel="@(() => authModalVisible = false)"
        Width="800"
        ConfirmLoading="@saving">
-    <Table TItem="UserAuthModel" DataSource="@userAuths" Size="@TableSize.Small" Pagination="false">
+    <Table TItem="UserAuthModel" DataSource="@userAuths" Size="@TableSize.Small" HidePagination>
         <ChildContent Context="userAuthContext">
             <PropertyColumn Property="u => u.UserName" Title="Username" />
             <PropertyColumn Property="u => u.Permission" Title="Permission">

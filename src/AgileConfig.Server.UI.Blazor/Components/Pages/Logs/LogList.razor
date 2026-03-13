@@ -1,7 +1,7 @@
 @page "/logs"
 @attribute [Authorize]
 @inherits LogListBase
-@using AgileConfig.Server.UI.Blazor.Models
+@using AgileConfig.Server.Apisite.Client.Models
 
 <PageTitle>System Logs - AgileConfig</PageTitle>
 
@@ -10,7 +10,7 @@
 </div>
 
 <div class="page-content">
-    <Table TItem="SysLogModel"
+    <Table TItem="SysLogInfo"
            DataSource="@logs"
            Loading="@loading"
            @bind-PageIndex="@pageIndex"
@@ -21,7 +21,7 @@
         </PropertyColumn>
         <PropertyColumn Property="l => l.AppId" Title="App ID" />
         <PropertyColumn Property="l => l.LogTime" Title="Time">
-            @context.LogTime
+            @context.LogTime?.ToString("yyyy-MM-dd HH:mm:ss")
         </PropertyColumn>
         <PropertyColumn Property="l => l.LogText" Title="Content" Ellipsis>
             @context.LogText

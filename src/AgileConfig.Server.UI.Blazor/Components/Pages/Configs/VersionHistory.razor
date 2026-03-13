@@ -1,4 +1,4 @@
-@using AgileConfig.Server.UI.Blazor.Models
+@using AgileConfig.Server.Apisite.Client.Models
 @inherits VersionHistoryBase
 
 <Modal Title="Version History"
@@ -16,10 +16,10 @@
             @foreach (var (publishNode, index) in historyData.Select((item, i) => (item, i)))
             {
                 <div key="@publishNode.TimelineNode.Id" class="history-version-table">
-                    <Table TItem="ConfigModel"
-                           DataSource="@publishNode.Configs"
+                    <Table TItem="ConfigInfo"
+                           DataSource="@publishNode.List"
                            Size="@TableSize.Small"
-                           Pagination="false">
+                           HidePagination>
                         <TitleTemplate>
                             <div>
                                 <span>@publishNode.TimelineNode.PublishTime?.ToString("yyyy-MM-dd HH:mm:ss") / @publishNode.TimelineNode.PublishUserName</span>

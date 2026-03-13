@@ -1,7 +1,7 @@
 @page "/nodes"
 @attribute [Authorize]
 @inherits NodeListBase
-@using AgileConfig.Server.UI.Blazor.Models
+@using AgileConfig.Server.Apisite.Client.Models
 
 <PageTitle>Server Nodes - AgileConfig</PageTitle>
 
@@ -52,7 +52,7 @@
         </Space>
     </div>
 
-    <Table TItem="ServerNodeModel"
+    <Table TItem="ServerNodeInfo"
            DataSource="@filteredNodes"
            Loading="@loading">
         <PropertyColumn Property="n => n.Address" Title="Address" />
@@ -67,17 +67,11 @@
                 <Badge Status="@BadgeStatus.Default" Text="Offline" />
             }
         </PropertyColumn>
-        <PropertyColumn Property="n => n.CreateTime" Title="Create Time">
-            @context.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss")
-        </PropertyColumn>
-        <PropertyColumn Property="n => n.LastHeartbeatTime" Title="Last Heartbeat">
-            @context.LastHeartbeatTime?.ToString("yyyy-MM-dd HH:mm:ss")
+        <PropertyColumn Property="n => n.LastEchoTime" Title="Last Heartbeat">
+            @context.LastEchoTime?.ToString("yyyy-MM-dd HH:mm:ss")
         </PropertyColumn>
         <ActionColumn Title="Actions">
             <Space>
-                <SpaceItem>
-                    <Button Type="@ButtonType.Link" OnClick="@(() => ShowEditModal(context))">Edit</Button>
-                </SpaceItem>
                 <SpaceItem>
                     <Popconfirm Title="@($"Delete node {context.Address}?")" OnConfirm="@(() => DeleteNode(context))">
                         <Button Type="@ButtonType.Link" Danger>Delete</Button>

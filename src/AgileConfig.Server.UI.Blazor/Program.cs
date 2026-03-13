@@ -1,3 +1,4 @@
+using AgileConfig.Server.Apisite.Client;
 using AgileConfig.Server.UI.Blazor.Components;
 using AgileConfig.Server.UI.Blazor.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -15,26 +16,7 @@ builder.Services.AddAntDesign();
 // Add HttpContextAccessor for cookie-based auth persistence across F5 refresh
 builder.Services.AddHttpContextAccessor();
 
-// Add HTTP Client and Services
-builder.Services.AddScoped<AuthHttpHandler>();
-builder.Services.AddScoped(sp =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    var handler = sp.GetRequiredService<AuthHttpHandler>();
-    handler.InnerHandler = new HttpClientHandler();
-
-    var httpClient = new HttpClient(handler);
-    var baseUrl = config["ApiBaseUrl"] ?? "http://localhost:5000";
-    httpClient.BaseAddress = new Uri(baseUrl);
-    return httpClient;
-});
-builder.Services.AddScoped<ApiClient>();
-builder.Services.AddScoped<WebSocketService>();
-
 // Add Authentication and Authorization
-// For Blazor Server with Interactive components, we need authentication services
-// for the initial HTTP request handling, even though actual authentication
-// is managed via AuthenticationStateProvider for Blazor components
 builder.Services.AddAuthentication("Blazor.Cookie")
     .AddCookie("Blazor.Cookie", options =>
     {
@@ -49,20 +31,23 @@ builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
     provider.GetRequiredService<CustomAuthenticationStateProvider>());
 
+// 注册 Apisite SDK：所有类型化客户端 + BearerTokenHandler
+builder.Services.AddAgileConfigApiClients();
+
+// Blazor UI 专用服务
+builder.Services.AddScoped<WebSocketService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
-// Authentication and Authorization middleware
-// Required for Blazor Web Apps to handle [Authorize] attributes on initial page loads
 app.UseAuthentication();
 app.UseAuthorization();
 

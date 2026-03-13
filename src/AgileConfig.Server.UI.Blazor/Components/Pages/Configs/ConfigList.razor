@@ -1,7 +1,7 @@
 @page "/configs/{AppId}/{AppName}"
 @attribute [Authorize]
 @inherits ConfigListBase
-@using AgileConfig.Server.UI.Blazor.Models
+@using AgileConfig.Server.Apisite.Client.Models
 
 <PageTitle>Configs - @AppName - AgileConfig</PageTitle>
 
@@ -50,12 +50,10 @@
             </Space>
         </SpaceItem>
         <SpaceItem>
-            <Table TItem="ConfigModel"
+            <Table TItem="ConfigInfo"
                    DataSource="@configs"
                    Loading="@loading"
-                   SelectedRows="@selectedRows"
-                   SelectedRowsChanged="@((rows) => selectedRows = rows.ToList())"
-                   Selection>
+                   @bind-SelectedRows="@selectedRows">
                 <ToolbarTemplate>
                     <Space>
                         <SpaceItem>
@@ -106,6 +104,7 @@
                         </SpaceItem>
                     </Space>
                 </ToolbarTemplate>
+                <Selection Key="@(context.Id)" />
                 <PropertyColumn Property="c => c.Group" Title="Group" Sortable>
                     <Text Copyable>@context.Group</Text>
                 </PropertyColumn>

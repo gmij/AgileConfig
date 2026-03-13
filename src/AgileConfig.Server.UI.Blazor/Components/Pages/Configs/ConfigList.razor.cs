@@ -1,22 +1,19 @@
-using AgileConfig.Server.UI.Blazor.Services;
-using AgileConfig.Server.UI.Blazor.Models;
+using AgileConfig.Server.Apisite.Client;
+using AgileConfig.Server.Apisite.Client.Models;
 using Microsoft.AspNetCore.Components;
 
 namespace AgileConfig.Server.UI.Blazor.Components.Pages.Configs;
 
 public class ConfigListBase : ComponentBase
 {
-    [Inject] protected ApiClient ApiClient { get; set; } = default!;
+    [Inject] protected ConfigApiClient ConfigApi { get; set; } = default!;
     [Inject] protected NavigationManager Navigation { get; set; } = default!;
 
-    [Parameter]
-    public string AppId { get; set; } = "";
+    [Parameter] public string AppId { get; set; } = "";
+    [Parameter] public string AppName { get; set; } = "";
 
-    [Parameter]
-    public string AppName { get; set; } = "";
-
-    protected List<ConfigModel> configs = new();
-    protected List<ConfigModel> selectedRows = new();
+    protected List<ConfigInfo> configs = new();
+    protected IEnumerable<ConfigInfo> selectedRows = Array.Empty<ConfigInfo>();
     protected List<string> envList = new() { "DEV", "TEST", "STAGING", "PROD" };
     private string _currentEnv = "DEV";
     protected string currentEnv
@@ -40,7 +37,7 @@ public class ConfigListBase : ComponentBase
     protected bool modalVisible = false;
     protected bool publishModalVisible = false;
     protected bool isEditMode = false;
-    protected ConfigModel currentConfig = new();
+    protected AddEditConfigRequest currentConfig = new();
     protected string publishLog = "";
 
     protected override async Task OnInitializedAsync()
@@ -53,40 +50,25 @@ public class ConfigListBase : ComponentBase
     {
         loading = true;
         StateHasChanged();
-
         try
         {
-            var response = await ApiClient.GetAsync<ApiResponse<List<ConfigModel>>>($"/api/config/search?appId={AppId}&env={currentEnv}");
-            if (response?.Success == true && response.Data != null)
-            {
+            var response = await ConfigApi.SearchAsync(AppId, currentEnv);
+            if (response != null)
                 configs = response.Data;
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading configs: {ex.Message}");
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading configs: {ex.Message}"); }
+        finally { loading = false; StateHasChanged(); }
     }
 
     protected async Task LoadWaitPublishStatus()
     {
         try
         {
-            var response = await ApiClient.GetAsync<ApiResponse<WaitPublishStatus>>($"/api/config/{AppId}/waitPublishStatus?env={currentEnv}");
+            var response = await ConfigApi.GetWaitPublishStatusAsync(AppId, currentEnv);
             if (response?.Success == true && response.Data != null)
-            {
                 waitPublishStatus = response.Data;
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading wait publish status: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading wait publish status: {ex.Message}"); }
     }
 
     protected async Task OnEnvChange()
@@ -95,30 +77,27 @@ public class ConfigListBase : ComponentBase
         await LoadWaitPublishStatus();
     }
 
-    protected bool HasWaitPublish()
-    {
-        return waitPublishStatus.AddCount + waitPublishStatus.EditCount + waitPublishStatus.DeleteCount > 0;
-    }
+    protected bool HasWaitPublish() =>
+        waitPublishStatus.AddCount + waitPublishStatus.EditCount + waitPublishStatus.DeleteCount > 0;
 
     protected void ShowAddModal()
     {
         isEditMode = false;
-        currentConfig = new ConfigModel { AppId = AppId, Env = currentEnv };
+        currentConfig = new AddEditConfigRequest { AppId = AppId };
         modalVisible = true;
     }
 
-    protected void ShowEditModal(ConfigModel config)
+    protected void ShowEditModal(ConfigInfo config)
     {
         isEditMode = true;
-        currentConfig = new ConfigModel
+        currentConfig = new AddEditConfigRequest
         {
             Id = config.Id,
             AppId = config.AppId,
             Group = config.Group,
             Key = config.Key,
             Value = config.Value,
-            Description = config.Description,
-            Env = currentEnv
+            Description = config.Description
         };
         modalVisible = true;
     }
@@ -127,29 +106,21 @@ public class ConfigListBase : ComponentBase
     {
         saving = true;
         StateHasChanged();
-
         try
         {
-            var response = isEditMode
-                ? await ApiClient.PutAsync($"/api/config?env={currentEnv}", currentConfig)
-                : await ApiClient.PostAsync($"/api/config?env={currentEnv}", currentConfig);
+            AgileResponse? response = isEditMode
+                ? await ConfigApi.EditAsync(currentConfig, currentEnv)
+                : await ConfigApi.AddAsync(currentConfig, currentEnv);
 
-            if (response.IsSuccessStatusCode)
+            if (response?.Success == true)
             {
                 modalVisible = false;
                 await LoadConfigs();
                 await LoadWaitPublishStatus();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving config: {ex.Message}");
-        }
-        finally
-        {
-            saving = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error saving config: {ex.Message}"); }
+        finally { saving = false; StateHasChanged(); }
     }
 
     protected void ShowPublishModal()
@@ -162,50 +133,37 @@ public class ConfigListBase : ComponentBase
     {
         publishing = true;
         StateHasChanged();
-
         try
         {
-            var ids = selectedRows.Where(x => x.EditStatus != 10).Select(x => x.Id).ToList();
-            var response = await ApiClient.PostAsync($"/api/config/{AppId}/publish?env={currentEnv}", new
-            {
-                ids = ids,
-                log = publishLog
-            });
+            var ids = selectedRows.Where(x => x.EditStatus != 10).Select(x => x.Id).ToArray();
+            var response = await ConfigApi.PublishAsync(
+                new PublishRequest { AppId = AppId, Ids = ids, Log = publishLog },
+                currentEnv);
 
-            if (response.IsSuccessStatusCode)
+            if (response?.Success == true)
             {
                 publishModalVisible = false;
-                selectedRows.Clear();
+                selectedRows = Array.Empty<ConfigInfo>();
                 await LoadConfigs();
                 await LoadWaitPublishStatus();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error publishing configs: {ex.Message}");
-        }
-        finally
-        {
-            publishing = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error publishing configs: {ex.Message}"); }
+        finally { publishing = false; StateHasChanged(); }
     }
 
-    protected async Task DeleteConfig(ConfigModel config)
+    protected async Task DeleteConfig(ConfigInfo config)
     {
         try
         {
-            var response = await ApiClient.DeleteAsync($"/api/config/{config.Id}?env={currentEnv}");
-            if (response.IsSuccessStatusCode)
+            var response = await ConfigApi.DeleteAsync(config.Id, currentEnv);
+            if (response?.Success == true)
             {
                 await LoadConfigs();
                 await LoadWaitPublishStatus();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting config: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error deleting config: {ex.Message}"); }
     }
 
     protected async Task DeleteSelected()
@@ -213,35 +171,29 @@ public class ConfigListBase : ComponentBase
         try
         {
             var ids = selectedRows.Select(x => x.Id).ToList();
-            var response = await ApiClient.PostAsync($"/api/config/delete?env={currentEnv}", ids);
-            if (response.IsSuccessStatusCode)
+            var response = await ConfigApi.DeleteSomeAsync(ids, currentEnv);
+            if (response?.Success == true)
             {
-                selectedRows.Clear();
+                selectedRows = Array.Empty<ConfigInfo>();
                 await LoadConfigs();
                 await LoadWaitPublishStatus();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting selected configs: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error deleting selected configs: {ex.Message}"); }
     }
 
-    protected async Task CancelEdit(ConfigModel config)
+    protected async Task CancelEdit(ConfigInfo config)
     {
         try
         {
-            var response = await ApiClient.PostAsync($"/api/config/{config.Id}/cancelEdit?env={currentEnv}", new { });
-            if (response.IsSuccessStatusCode)
+            var response = await ConfigApi.CancelEditAsync(config.Id, currentEnv);
+            if (response?.Success == true)
             {
                 await LoadConfigs();
                 await LoadWaitPublishStatus();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error canceling edit: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error canceling edit: {ex.Message}"); }
     }
 
     protected async Task CancelEditSelected()
@@ -249,49 +201,28 @@ public class ConfigListBase : ComponentBase
         try
         {
             var ids = selectedRows.Where(x => x.EditStatus != 10).Select(x => x.Id).ToList();
-            var response = await ApiClient.PostAsync($"/api/config/cancelEdit?env={currentEnv}", ids);
-            if (response.IsSuccessStatusCode)
+            var response = await ConfigApi.CancelSomeEditAsync(ids, currentEnv);
+            if (response?.Success == true)
             {
-                selectedRows.Clear();
+                selectedRows = Array.Empty<ConfigInfo>();
                 await LoadConfigs();
                 await LoadWaitPublishStatus();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error canceling selected edits: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error canceling selected edits: {ex.Message}"); }
     }
 
-    protected void ShowHistory(ConfigModel config)
-    {
-        // TODO: Implement history modal
-    }
+    protected bool versionHistoryVisible = false;
+    protected bool envSyncVisible = false;
+    protected bool jsonImportVisible = false;
+    protected ConfigInfo? historyConfig = null;
+    protected bool configHistoryVisible = false;
 
-    protected void ShowVersionHistory()
-    {
-        // TODO: Implement version history modal
-    }
+    protected void ShowVersionHistory() => versionHistoryVisible = true;
+    protected void ShowEnvSync() => envSyncVisible = true;
+    protected void ShowJsonImport() => jsonImportVisible = true;
+    protected void ShowHistory(ConfigInfo config) { historyConfig = config; configHistoryVisible = true; }
 
-    protected void ShowEnvSync()
-    {
-        // TODO: Implement env sync modal
-    }
-
-    protected void ShowJsonImport()
-    {
-        // TODO: Implement JSON import modal
-    }
-
-    protected async Task ExportJson()
-    {
-        try
-        {
-            Navigation.NavigateTo($"/api/config/{AppId}/export?env={currentEnv}", true);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error exporting JSON: {ex.Message}");
-        }
-    }
+    protected void ExportJson() =>
+        Navigation.NavigateTo(ConfigApi.GetExportUrl(AppId, currentEnv), forceLoad: true);
 }

@@ -1,7 +1,7 @@
 @page "/clients"
 @attribute [Authorize]
 @inherits ClientListBase
-@using AgileConfig.Server.UI.Blazor.Models
+@using AgileConfig.Server.Apisite.Client.Models
 
 <PageTitle>Client Connections - AgileConfig</PageTitle>
 
@@ -58,7 +58,7 @@
             </SpaceItem>
         </Space>
     </div>
-    <Table TItem="ClientInfoModel"
+    <Table TItem="ClientInfo"
            DataSource="@filteredClients"
            Loading="@loading">
         <PropertyColumn Property="c => c.Id" Title="Client ID" />

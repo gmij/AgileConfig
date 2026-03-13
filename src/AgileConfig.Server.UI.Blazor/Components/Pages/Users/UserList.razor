@@ -1,6 +1,7 @@
 @page "/users"
 @attribute [Authorize]
 @inherits UserListBase
+@using AgileConfig.Server.Apisite.Client.Models
 @using AgileConfig.Server.UI.Blazor.Models
 
 <PageTitle>Users - AgileConfig</PageTitle>
@@ -41,14 +42,14 @@
             <SpaceItem>
                 <div style="min-width: 200px;">
                     <span class="search-label">Status</span>
-                    <Select TItemValue="bool?"
+                    <Select TItemValue="int?"
                             TItem="string"
-                            @bind-Value="@searchModel.Enabled"
+                            @bind-Value="@searchModel.StatusFilter"
                             Placeholder="All"
                             AllowClear
                             Style="width: 100%;">
-                        <SelectOption TItemValue="bool?" TItem="string" Value="@(true)" Label="Enabled" />
-                        <SelectOption TItemValue="bool?" TItem="string" Value="@(false)" Label="Disabled" />
+                        <SelectOption TItemValue="int?" TItem="string" Value="@(0)" Label="Normal" />
+                        <SelectOption TItemValue="int?" TItem="string" Value="@(1)" Label="Deleted" />
                     </Select>
                 </div>
             </SpaceItem>
@@ -66,45 +67,34 @@
             </SpaceItem>
         </Space>
     </div>
-    <Table TItem="UserModel"
+    <Table TItem="UserInfo"
            DataSource="@filteredUsers"
            Loading="@loading"
            @bind-PageIndex="@pageIndex"
            @bind-PageSize="@pageSize"
            Total="@total">
         <PropertyColumn Property="u => u.UserName" Title="Username" />
-        <PropertyColumn Property="u => u.Email" Title="Email" />
-        <PropertyColumn Property="u => u.Roles" Title="Roles">
-            @if (context.Roles != null)
+        <PropertyColumn Property="u => u.Team" Title="Team" />
+        <PropertyColumn Property="u => u.UserRoleNames" Title="Roles">
+            @foreach (var role in context.UserRoleNames)
             {
-                @foreach (var role in context.Roles)
-                {
-                    <Tag Color="@("blue")">@role</Tag>
-                }
+                <Tag Color="@("blue")">@role</Tag>
             }
         </PropertyColumn>
-        <PropertyColumn Property="u => u.Enabled" Title="Status">
-            @if (context.Enabled)
+        <PropertyColumn Property="u => u.Status" Title="Status">
+            @if (context.Status == 0)
             {
-                <Badge Status="@BadgeStatus.Success" Text="Enabled" />
+                <Badge Status="@BadgeStatus.Success" Text="Normal" />
             }
             else
             {
-                <Badge Status="@BadgeStatus.Default" Text="Disabled" />
+                <Badge Status="@BadgeStatus.Default" Text="Deleted" />
             }
-        </PropertyColumn>
-        <PropertyColumn Property="u => u.CreateTime" Title="Create Time">
-            @context.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss")
         </PropertyColumn>
         <ActionColumn Title="Actions">
             <Space>
                 <SpaceItem>
                     <Button Type="@ButtonType.Link" OnClick="@(() => ShowEditModal(context))">Edit</Button>
-                </SpaceItem>
-                <SpaceItem>
-                    <Button Type="@ButtonType.Link" OnClick="@(() => ToggleUserStatus(context))">
-                        @(context.Enabled ? "Disable" : "Enable")
-                    </Button>
                 </SpaceItem>
                 <SpaceItem>
                     <Popconfirm Title="@($"Delete user {context.UserName}?")" OnConfirm="@(() => DeleteUser(context))">
@@ -129,9 +119,6 @@
             <FormItem Label="Password" Required="@(!isEditMode)">
                 <InputPassword @bind-Value="@formContext.Password" Placeholder="@(isEditMode ? "Leave blank to keep current" : "Enter password")" />
             </FormItem>
-            <FormItem Label="Email">
-                <Input @bind-Value="@formContext.Email" Placeholder="Enter email" />
-            </FormItem>
             <FormItem Label="Roles">
                 <Select TItemValue="string"
                         TItem="string"
@@ -143,9 +130,6 @@
                     <SelectOption TItemValue="string" TItem="string" Value="@("Administrator")" Label="Administrator" />
                     <SelectOption TItemValue="string" TItem="string" Value="@("Operator")" Label="Operator" />
                 </Select>
-            </FormItem>
-            <FormItem Label="Enabled">
-                <Switch @bind-Checked="@formContext.Enabled" />
             </FormItem>
         </ChildContent>
     </Form>

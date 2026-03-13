@@ -1,4 +1,5 @@
-using AgileConfig.Server.UI.Blazor.Services;
+using AgileConfig.Server.Apisite.Client;
+using AgileConfig.Server.Apisite.Client.Models;
 using AgileConfig.Server.UI.Blazor.Models;
 using Microsoft.AspNetCore.Components;
 
@@ -6,12 +7,12 @@ namespace AgileConfig.Server.UI.Blazor.Components.Pages.Apps;
 
 public class AppListBase : ComponentBase
 {
-    [Inject] protected ApiClient ApiClient { get; set; } = default!;
+    [Inject] protected AppApiClient AppApi { get; set; } = default!;
     [Inject] protected NavigationManager Navigation { get; set; } = default!;
 
-    protected List<AppModel> apps = new();
+    protected List<AppInfo> apps = new();
     protected List<string> appGroups = new();
-    protected List<AppModel> publicApps = new();
+    protected List<InheritancedAppItem> publicApps = new();
     protected bool loading = false;
     protected bool saving = false;
     protected bool groupAggregation = false;
@@ -24,11 +25,13 @@ public class AppListBase : ComponentBase
     protected bool modalVisible = false;
     protected bool authModalVisible = false;
     protected bool isEditMode = false;
-    protected AppModel currentApp = new();
+    protected AddEditAppRequest currentApp = new();
 
+    protected List<string> authorizedUserIds = new();
     protected List<UserAuthModel> userAuths = new();
     protected string newUserName = "";
     protected string newUserPermission = "R";
+    protected string currentAppId = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,102 +44,62 @@ public class AppListBase : ComponentBase
     {
         loading = true;
         StateHasChanged();
-
         try
         {
-            var queryParams = new
+            var response = await AppApi.SearchAsync(pageIndex, pageSize,
+                sortField: sortField, ascOrDesc: sortOrder, tableGrouped: groupAggregation);
+            if (response != null)
             {
-                current = pageIndex,
-                pageSize = pageSize,
-                sortField = sortField,
-                ascOrDesc = sortOrder,
-                tableGrouped = groupAggregation
-            };
-
-            var response = await ApiClient.GetAsync<ApiResponse<PagedResult<AppModel>>>("/api/app/search");
-            if (response?.Success == true && response.Data != null)
-            {
-                apps = response.Data.Data ?? new();
-                total = response.Data.Total;
+                apps = response.Data;
+                total = response.Total;
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading apps: {ex.Message}");
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading apps: {ex.Message}"); }
+        finally { loading = false; StateHasChanged(); }
     }
 
     protected async Task LoadAppGroups()
     {
         try
         {
-            var response = await ApiClient.GetAsync<ApiResponse<List<string>>>("/api/app/groups");
+            var response = await AppApi.GetGroupsAsync();
             if (response?.Success == true && response.Data != null)
-            {
                 appGroups = response.Data;
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading app groups: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading app groups: {ex.Message}"); }
     }
 
     protected async Task LoadPublicApps()
     {
         try
         {
-            var response = await ApiClient.GetAsync<ApiResponse<List<AppModel>>>("/api/app/inheritancedApps");
+            var response = await AppApi.GetInheritancedAppsAsync();
             if (response?.Success == true && response.Data != null)
-            {
                 publicApps = response.Data;
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading public apps: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading public apps: {ex.Message}"); }
     }
 
-    protected async Task OnGroupAggregationChange()
-    {
-        await LoadApps();
-    }
-
-    protected async Task OnTableChange(QueryModel<AppModel> queryModel)
-    {
-        if (queryModel.SortModel != null && queryModel.SortModel.Length > 0)
-        {
-            var sort = queryModel.SortModel[0];
-            sortField = sort.FieldName;
-            sortOrder = sort.Sort;
-        }
-        await LoadApps();
-    }
+    protected async Task OnGroupAggregationChange() => await LoadApps();
 
     protected void ShowAddModal()
     {
         isEditMode = false;
-        currentApp = new AppModel { Enabled = true };
+        currentApp = new AddEditAppRequest { Enabled = true };
         modalVisible = true;
     }
 
-    protected void ShowEditModal(AppModel app)
+    protected void ShowEditModal(AppInfo app)
     {
         isEditMode = true;
-        currentApp = new AppModel
+        currentApp = new AddEditAppRequest
         {
             Id = app.Id,
             Name = app.Name,
             Secret = app.Secret,
             Group = app.Group,
             Inheritanced = app.Inheritanced,
-            InheritancedApps = app.InheritancedApps,
+            InheritancedApps = new List<string>(app.InheritancedApps),
             Enabled = app.Enabled
         };
         modalVisible = true;
@@ -146,29 +109,20 @@ public class AppListBase : ComponentBase
     {
         saving = true;
         StateHasChanged();
-
         try
         {
-            var endpoint = "/api/app";
             var response = isEditMode
-                ? await ApiClient.PutAsync(endpoint, currentApp)
-                : await ApiClient.PostAsync(endpoint, currentApp);
+                ? await AppApi.EditAsync(currentApp)
+                : await AppApi.AddAsync(currentApp);
 
-            if (response.IsSuccessStatusCode)
+            if (response?.Success == true)
             {
                 modalVisible = false;
                 await LoadApps();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving app: {ex.Message}");
-        }
-        finally
-        {
-            saving = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error saving app: {ex.Message}"); }
+        finally { saving = false; StateHasChanged(); }
     }
 
     protected void HandleCancel()
@@ -177,106 +131,78 @@ public class AppListBase : ComponentBase
         currentApp = new();
     }
 
-    protected async Task ToggleEnabled(AppModel app)
+    protected async Task ToggleEnabled(AppInfo app)
     {
         try
         {
-            var response = await ApiClient.PostAsync($"/api/app/{app.Id}/enable", new { });
-            if (response.IsSuccessStatusCode)
+            var response = await AppApi.ToggleEnabledAsync(app.Id);
+            if (response?.Success == true)
             {
                 app.Enabled = !app.Enabled;
                 StateHasChanged();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error toggling app enabled state: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error toggling app: {ex.Message}"); }
     }
 
-    protected async Task DeleteApp(AppModel app)
+    protected async Task DeleteApp(AppInfo app)
     {
         try
         {
-            var response = await ApiClient.DeleteAsync($"/api/app/{app.Id}");
-            if (response.IsSuccessStatusCode)
-            {
+            var response = await AppApi.DeleteAsync(app.Id);
+            if (response?.Success == true)
                 await LoadApps();
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting app: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error deleting app: {ex.Message}"); }
     }
 
-    protected void NavigateToConfigs(AppModel app)
-    {
+    protected void NavigateToConfigs(AppInfo app) =>
         Navigation.NavigateTo($"/configs/{app.Id}/{app.Name}");
-    }
 
-    protected async Task ShowAuthModal(AppModel app)
+    protected async Task ShowAuthModal(AppInfo app)
     {
-        currentApp = app;
+        currentAppId = app.Id;
         authModalVisible = true;
-
         try
         {
-            var response = await ApiClient.GetAsync<ApiResponse<List<UserAuthModel>>>($"/api/app/{app.Id}/auth");
+            var response = await AppApi.GetUserAuthAsync(app.Id);
             if (response?.Success == true && response.Data != null)
             {
-                userAuths = response.Data;
+                authorizedUserIds = new List<string>(response.Data.AuthorizedUsers);
+                userAuths = authorizedUserIds.Select(uid => new UserAuthModel { UserId = uid, UserName = uid, Permission = "R" }).ToList();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading user auth: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading user auth: {ex.Message}"); }
+    }
+
+    protected void RemoveUserAuth(UserAuthModel model)
+    {
+        userAuths.Remove(model);
+        authorizedUserIds = userAuths.Select(u => u.UserId).ToList();
     }
 
     protected void AddUserAuth()
     {
         if (!string.IsNullOrWhiteSpace(newUserName))
         {
-            userAuths.Add(new UserAuthModel
-            {
-                UserId = newUserName,
-                UserName = newUserName,
-                Permission = newUserPermission
-            });
+            userAuths.Add(new UserAuthModel { UserId = newUserName, UserName = newUserName, Permission = newUserPermission });
+            authorizedUserIds = userAuths.Select(u => u.UserId).ToList();
             newUserName = "";
             newUserPermission = "R";
-            StateHasChanged();
         }
-    }
-
-    protected void RemoveUserAuth(UserAuthModel userAuth)
-    {
-        userAuths.Remove(userAuth);
-        StateHasChanged();
     }
 
     protected async Task HandleAuthSubmit()
     {
         saving = true;
         StateHasChanged();
-
         try
         {
-            var response = await ApiClient.PostAsync($"/api/app/{currentApp.Id}/auth", userAuths);
-            if (response.IsSuccessStatusCode)
-            {
+            var response = await AppApi.SaveUserAuthAsync(currentAppId, authorizedUserIds);
+            if (response?.Success == true)
                 authModalVisible = false;
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving user auth: {ex.Message}");
-        }
-        finally
-        {
-            saving = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error saving user auth: {ex.Message}"); }
+        finally { saving = false; StateHasChanged(); }
     }
 }

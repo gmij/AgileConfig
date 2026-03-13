@@ -1,4 +1,5 @@
-using AgileConfig.Server.UI.Blazor.Services;
+using AgileConfig.Server.Apisite.Client;
+using AgileConfig.Server.Apisite.Client.Models;
 using AgileConfig.Server.UI.Blazor.Models;
 using Microsoft.AspNetCore.Components;
 
@@ -7,16 +8,17 @@ namespace AgileConfig.Server.UI.Blazor.Components.Pages.Users;
 public class UserSearchModel
 {
     public string? UserName { get; set; }
+    public string? Team { get; set; }
     public string? Role { get; set; }
-    public bool? Enabled { get; set; }
+    public int? StatusFilter { get; set; }
 }
 
 public class UserListBase : ComponentBase
 {
-    [Inject] protected ApiClient ApiClient { get; set; } = default!;
+    [Inject] protected UserApiClient UserApi { get; set; } = default!;
 
-    protected List<UserModel> users = new();
-    protected List<UserModel> filteredUsers = new();
+    protected List<UserInfo> users = new();
+    protected List<UserInfo> filteredUsers = new();
     protected bool loading = false;
     protected bool saving = false;
     protected int pageIndex = 1;
@@ -25,45 +27,33 @@ public class UserListBase : ComponentBase
 
     protected bool modalVisible = false;
     protected bool isEditMode = false;
+    protected AddUserRequest addRequest = new();
+    protected EditUserRequest editRequest = new();
     protected UserModel currentUser = new();
 
     protected UserSearchModel searchModel = new();
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadUsers();
-    }
+    protected override async Task OnInitializedAsync() => await LoadUsers();
 
     protected async Task LoadUsers()
     {
         loading = true;
         StateHasChanged();
-
         try
         {
-            var response = await ApiClient.GetAsync<ApiResponse<PagedResult<UserModel>>>($"/api/user?current={pageIndex}&pageSize={pageSize}");
-            if (response?.Success == true && response.Data != null)
+            var response = await UserApi.SearchAsync(pageIndex, pageSize);
+            if (response != null)
             {
-                users = response.Data.Data ?? new();
-                total = response.Data.Total;
+                users = response.Data;
+                total = response.Total;
                 ApplyFilters();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading users: {ex.Message}");
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading users: {ex.Message}"); }
+        finally { loading = false; StateHasChanged(); }
     }
 
-    protected void HandleSearch()
-    {
-        ApplyFilters();
-    }
+    protected void HandleSearch() => ApplyFilters();
 
     protected void HandleReset()
     {
@@ -73,28 +63,14 @@ public class UserListBase : ComponentBase
 
     private void ApplyFilters()
     {
-        filteredUsers = users.Where(user =>
+        filteredUsers = users.Where(u =>
         {
-            // Filter by username
             if (!string.IsNullOrWhiteSpace(searchModel.UserName) &&
-                !user.UserName.Contains(searchModel.UserName, StringComparison.OrdinalIgnoreCase))
-            {
+                !u.UserName.Contains(searchModel.UserName, StringComparison.OrdinalIgnoreCase))
                 return false;
-            }
-
-            // Filter by role
-            if (!string.IsNullOrWhiteSpace(searchModel.Role) &&
-                (user.Roles == null || !user.Roles.Contains(searchModel.Role)))
-            {
+            if (!string.IsNullOrWhiteSpace(searchModel.Team) &&
+                (u.Team == null || !u.Team.Contains(searchModel.Team, StringComparison.OrdinalIgnoreCase)))
                 return false;
-            }
-
-            // Filter by enabled status
-            if (searchModel.Enabled.HasValue && user.Enabled != searchModel.Enabled.Value)
-            {
-                return false;
-            }
-
             return true;
         }).ToList();
     }
@@ -102,20 +78,26 @@ public class UserListBase : ComponentBase
     protected void ShowAddModal()
     {
         isEditMode = false;
-        currentUser = new UserModel { Enabled = true };
+        addRequest = new AddUserRequest();
+        currentUser = new UserModel();
         modalVisible = true;
     }
 
-    protected void ShowEditModal(UserModel user)
+    protected void ShowEditModal(UserInfo user)
     {
         isEditMode = true;
+        editRequest = new EditUserRequest
+        {
+            Id = user.Id,
+            UserName = user.UserName,
+            Team = user.Team,
+            UserRoleIds = new List<string>(user.UserRoleIds)
+        };
         currentUser = new UserModel
         {
             Id = user.Id,
             UserName = user.UserName,
-            Email = user.Email,
-            Roles = user.Roles,
-            Enabled = user.Enabled
+            Roles = new List<string>(user.UserRoleNames)
         };
         modalVisible = true;
     }
@@ -124,60 +106,47 @@ public class UserListBase : ComponentBase
     {
         saving = true;
         StateHasChanged();
-
         try
         {
-            var response = isEditMode
-                ? await ApiClient.PutAsync("/api/user", currentUser)
-                : await ApiClient.PostAsync("/api/user", currentUser);
+            AgileResponse? response;
+            if (isEditMode)
+            {
+                editRequest.UserName = currentUser.UserName;
+                editRequest.UserRoleIds = currentUser.Roles ?? new List<string>();
+                response = await UserApi.EditAsync(editRequest);
+            }
+            else
+            {
+                addRequest.UserName = currentUser.UserName;
+                addRequest.Password = currentUser.Password ?? "";
+                addRequest.UserRoleIds = currentUser.Roles ?? new List<string>();
+                response = await UserApi.AddAsync(addRequest);
+            }
 
-            if (response.IsSuccessStatusCode)
+            if (response?.Success == true)
             {
                 modalVisible = false;
                 await LoadUsers();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving user: {ex.Message}");
-        }
-        finally
-        {
-            saving = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error saving user: {ex.Message}"); }
+        finally { saving = false; StateHasChanged(); }
     }
 
-    protected async Task ToggleUserStatus(UserModel user)
+    protected async Task DeleteUser(UserInfo user)
     {
         try
         {
-            var response = await ApiClient.PostAsync($"/api/user/{user.Id}/toggle", new { });
-            if (response.IsSuccessStatusCode)
-            {
-                user.Enabled = !user.Enabled;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error toggling user status: {ex.Message}");
-        }
-    }
-
-    protected async Task DeleteUser(UserModel user)
-    {
-        try
-        {
-            var response = await ApiClient.DeleteAsync($"/api/user/{user.Id}");
-            if (response.IsSuccessStatusCode)
-            {
+            var response = await UserApi.DeleteAsync(user.Id);
+            if (response?.Success == true)
                 await LoadUsers();
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting user: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error deleting user: {ex.Message}"); }
+    }
+
+    protected async Task ResetPassword(UserInfo user)
+    {
+        try { await UserApi.ResetPasswordAsync(user.Id); }
+        catch (Exception ex) { Console.WriteLine($"Error resetting password: {ex.Message}"); }
     }
 }

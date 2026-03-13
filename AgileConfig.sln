@@ -64,6 +64,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgileConfig.Server.Data.Rep
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgileConfig.Server.UI.Blazor", "src\AgileConfig.Server.UI.Blazor\AgileConfig.Server.UI.Blazor.csproj", "{CAE2EFF3-4E0F-48AA-845F-22E29D027D5E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgileConfig.Server.Apisite.Client", "src\AgileConfig.Server.Apisite.Client\AgileConfig.Server.Apisite.Client.csproj", "{6144FBAD-7DA3-408C-8E72-5387D28F1846}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -350,6 +352,18 @@ Global
 		{CAE2EFF3-4E0F-48AA-845F-22E29D027D5E}.Release|x64.Build.0 = Release|Any CPU
 		{CAE2EFF3-4E0F-48AA-845F-22E29D027D5E}.Release|x86.ActiveCfg = Release|Any CPU
 		{CAE2EFF3-4E0F-48AA-845F-22E29D027D5E}.Release|x86.Build.0 = Release|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Debug|x64.Build.0 = Debug|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Debug|x86.Build.0 = Debug|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Release|x64.ActiveCfg = Release|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Release|x64.Build.0 = Release|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Release|x86.ActiveCfg = Release|Any CPU
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -378,6 +392,7 @@ Global
 		{962E9C9E-D562-4107-89B6-AD1BB444AF01} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B546D488-1B2C-49DF-800D-33F398BC52FE} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{CAE2EFF3-4E0F-48AA-845F-22E29D027D5E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{6144FBAD-7DA3-408C-8E72-5387D28F1846} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F10DB58-5B6F-4EAC-994F-14E8046B306F}

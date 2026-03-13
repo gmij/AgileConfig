@@ -1,3 +1,4 @@
+using AgileConfig.Server.Apisite.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components;
 using System.Security.Claims;
@@ -9,6 +10,8 @@ public class LoginBase : ComponentBase
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
+    [Inject] private AdminApiClient AdminApi { get; set; } = default!;
+
     [SupplyParameterFromQuery(Name = "error")]
     public string? ErrorCode { get; set; }
 
@@ -17,14 +20,10 @@ public class LoginBase : ComponentBase
     protected override async Task OnInitializedAsync()
     {
         if (!string.IsNullOrEmpty(ErrorCode))
-        {
             errorMessage = "Invalid username or password";
-        }
 
         if (HttpMethods.IsPost(HttpContext.Request.Method))
-        {
             await HandleLoginAsync();
-        }
     }
 
     private async Task HandleLoginAsync()
@@ -39,23 +38,9 @@ public class LoginBase : ComponentBase
             return;
         }
 
-        var config = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
-        var baseUrl = config["ApiBaseUrl"] ?? "http://localhost:5000";
-        using var client = new HttpClient { BaseAddress = new Uri(baseUrl) };
-        var json = System.Text.Json.JsonSerializer.Serialize(new { userName = username, password });
-        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
         try
         {
-            var response = await client.PostAsync("/admin/jwt/login", content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                errorMessage = "Invalid username or password";
-                return;
-            }
-
-            var result = await response.Content.ReadFromJsonAsync<JwtLoginResponse>();
+            var result = await AdminApi.LoginAsync(username, password);
             if (result?.Status != "ok" || string.IsNullOrEmpty(result.Token))
             {
                 errorMessage = "Invalid username or password";
@@ -78,6 +63,4 @@ public class LoginBase : ComponentBase
             errorMessage = "Login failed, please try again";
         }
     }
-
-    private record JwtLoginResponse(string? Status, string? Token, string? Type);
 }

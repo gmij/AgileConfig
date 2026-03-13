@@ -1,7 +1,7 @@
 @page "/services"
 @attribute [Authorize]
 @inherits ServiceListBase
-@using AgileConfig.Server.UI.Blazor.Models
+@using AgileConfig.Server.Apisite.Client.Models
 
 <PageTitle>Services - AgileConfig</PageTitle>
 
@@ -52,7 +52,7 @@
             </SpaceItem>
         </Space>
     </div>
-    <Table TItem="ServiceInfoModel"
+    <Table TItem="ServiceInfo"
            DataSource="@filteredServices"
            Loading="@loading">
         <PropertyColumn Property="s => s.ServiceId" Title="Service ID" />
@@ -60,7 +60,7 @@
         <PropertyColumn Property="s => s.Ip" Title="IP Address" />
         <PropertyColumn Property="s => s.Port" Title="Port" />
         <PropertyColumn Property="s => s.Status" Title="Status">
-            @if (context.Status == "Healthy")
+            @if (context.Status == 0)
             {
                 <Badge Status="@BadgeStatus.Success" Text="Healthy" />
             }
@@ -72,8 +72,8 @@
         <PropertyColumn Property="s => s.RegisterTime" Title="Register Time">
             @context.RegisterTime?.ToString("yyyy-MM-dd HH:mm:ss")
         </PropertyColumn>
-        <PropertyColumn Property="s => s.HeartbeatTime" Title="Last Heartbeat">
-            @context.HeartbeatTime?.ToString("yyyy-MM-dd HH:mm:ss")
+        <PropertyColumn Property="s => s.LastHeartBeat" Title="Last Heartbeat">
+            @context.LastHeartBeat?.ToString("yyyy-MM-dd HH:mm:ss")
         </PropertyColumn>
         <ActionColumn Title="Actions">
             <Popconfirm Title="@($"Unregister service {context.ServiceName}?")" OnConfirm="@(() => UnregisterService(context))">

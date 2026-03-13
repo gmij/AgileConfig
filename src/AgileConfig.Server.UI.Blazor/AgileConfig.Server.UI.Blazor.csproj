@@ -11,4 +11,8 @@
     <PackageReference Include="AntDesign" Version="1.6.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\AgileConfig.Server.Apisite.Client\AgileConfig.Server.Apisite.Client.csproj" />
+  </ItemGroup>
+
 </Project>

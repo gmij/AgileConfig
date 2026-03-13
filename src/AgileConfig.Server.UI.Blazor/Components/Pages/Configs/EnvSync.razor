@@ -7,6 +7,6 @@
        ConfirmLoading="@saving">
     <p>Sync configurations from <strong>@CurrentEnv</strong> to:</p>
     <div style="margin-top: 20px;">
-        <CheckboxGroup @bind-Value="@selectedEnvs" Options="@availableEnvs" />
+        <CheckboxGroup TValue="string" Value="@selectedEnvsArray" ValueChanged="@OnEnvSelectionChanged" Options="@availableEnvs" />
     </div>
 </Modal>

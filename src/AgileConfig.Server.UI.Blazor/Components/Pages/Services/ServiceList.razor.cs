@@ -1,5 +1,5 @@
-using AgileConfig.Server.UI.Blazor.Services;
-using AgileConfig.Server.UI.Blazor.Models;
+using AgileConfig.Server.Apisite.Client;
+using AgileConfig.Server.Apisite.Client.Models;
 using Microsoft.AspNetCore.Components;
 
 namespace AgileConfig.Server.UI.Blazor.Components.Pages.Services;
@@ -13,10 +13,10 @@ public class ServiceSearchModel
 
 public class ServiceListBase : ComponentBase, IDisposable
 {
-    [Inject] protected ApiClient ApiClient { get; set; } = default!;
+    [Inject] protected ServiceApiClient ServiceApi { get; set; } = default!;
 
-    protected List<ServiceInfoModel> services = new();
-    protected List<ServiceInfoModel> filteredServices = new();
+    protected List<ServiceInfo> services = new();
+    protected List<ServiceInfo> filteredServices = new();
     protected bool loading = false;
     protected ServiceSearchModel searchModel = new();
 
@@ -25,14 +25,9 @@ public class ServiceListBase : ComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         await LoadServices();
-
         _refreshTimer = new Timer(async _ =>
         {
-            await InvokeAsync(async () =>
-            {
-                await LoadServices();
-                StateHasChanged();
-            });
+            await InvokeAsync(async () => { await LoadServices(); StateHasChanged(); });
         }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
     }
 
@@ -40,31 +35,20 @@ public class ServiceListBase : ComponentBase, IDisposable
     {
         loading = true;
         StateHasChanged();
-
         try
         {
-            var response = await ApiClient.GetAsync<ApiResponse<List<ServiceInfoModel>>>("/api/service");
-            if (response?.Success == true && response.Data != null)
+            var response = await ServiceApi.SearchAsync();
+            if (response != null)
             {
                 services = response.Data;
                 ApplyFilters();
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading services: {ex.Message}");
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading services: {ex.Message}"); }
+        finally { loading = false; StateHasChanged(); }
     }
 
-    protected void HandleSearch()
-    {
-        ApplyFilters();
-    }
+    protected void HandleSearch() => ApplyFilters();
 
     protected void HandleReset()
     {
@@ -74,51 +58,34 @@ public class ServiceListBase : ComponentBase, IDisposable
 
     private void ApplyFilters()
     {
-        filteredServices = services.Where(service =>
+        filteredServices = services.Where(s =>
         {
-            // Filter by service ID
             if (!string.IsNullOrWhiteSpace(searchModel.ServiceId) &&
-                !service.ServiceId.Contains(searchModel.ServiceId, StringComparison.OrdinalIgnoreCase))
-            {
+                !s.ServiceId.Contains(searchModel.ServiceId, StringComparison.OrdinalIgnoreCase))
                 return false;
-            }
-
-            // Filter by service name
             if (!string.IsNullOrWhiteSpace(searchModel.ServiceName) &&
-                !service.ServiceName.Contains(searchModel.ServiceName, StringComparison.OrdinalIgnoreCase))
-            {
+                !s.ServiceName.Contains(searchModel.ServiceName, StringComparison.OrdinalIgnoreCase))
                 return false;
-            }
-
-            // Filter by status
-            if (!string.IsNullOrWhiteSpace(searchModel.Status) &&
-                !service.Status.Equals(searchModel.Status, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(searchModel.Status))
             {
-                return false;
+                var expectedStatus = searchModel.Status == "Healthy" ? 0 : 1;
+                if (s.Status != expectedStatus) return false;
             }
-
             return true;
         }).ToList();
     }
 
-    protected async Task UnregisterService(ServiceInfoModel service)
+    protected async Task UnregisterService(ServiceInfo service)
     {
         try
         {
-            var response = await ApiClient.DeleteAsync($"/api/service/{service.ServiceId}");
-            if (response.IsSuccessStatusCode)
-            {
+            // 注意：RemoveAsync 使用 service.Id（uniqueId），不是 service.ServiceId
+            var response = await ServiceApi.RemoveAsync(service.Id);
+            if (response?.Success == true)
                 await LoadServices();
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error unregistering service: {ex.Message}");
-        }
+        catch (Exception ex) { Console.WriteLine($"Error unregistering service: {ex.Message}"); }
     }
 
-    public void Dispose()
-    {
-        _refreshTimer?.Dispose();
-    }
+    public void Dispose() => _refreshTimer?.Dispose();
 }

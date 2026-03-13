@@ -1,4 +1,4 @@
-using AgileConfig.Server.UI.Blazor.Services;
+using AgileConfig.Server.Apisite.Client;
 using Microsoft.AspNetCore.Components;
 using System.Text.Json;
 
@@ -6,7 +6,7 @@ namespace AgileConfig.Server.UI.Blazor.Components.Pages.Configs;
 
 public class JsonImportBase : ComponentBase
 {
-    [Inject] protected ApiClient ApiClient { get; set; } = default!;
+    [Inject] protected ConfigApiClient ConfigApi { get; set; } = default!;
 
     [Parameter] public string AppId { get; set; } = "";
     [Parameter] public string Env { get; set; } = "";
@@ -21,18 +21,13 @@ public class JsonImportBase : ComponentBase
     protected async Task HandleSubmit()
     {
         errorMessage = null;
-
         if (string.IsNullOrWhiteSpace(jsonContent))
         {
             errorMessage = "Please enter JSON content";
             return;
         }
 
-        try
-        {
-            // Validate JSON
-            JsonDocument.Parse(jsonContent);
-        }
+        try { JsonDocument.Parse(jsonContent); }
         catch (JsonException ex)
         {
             errorMessage = $"Invalid JSON format: {ex.Message}";
@@ -41,15 +36,10 @@ public class JsonImportBase : ComponentBase
 
         saving = true;
         StateHasChanged();
-
         try
         {
-            var response = await ApiClient.PostAsync($"/api/config/{AppId}/import?env={Env}", new
-            {
-                json = jsonContent
-            });
-
-            if (response.IsSuccessStatusCode)
+            var response = await ConfigApi.SaveJsonAsync(AppId, Env, jsonContent);
+            if (response?.Success == true)
             {
                 jsonContent = "";
                 await OnSuccess.InvokeAsync();
@@ -65,11 +55,7 @@ public class JsonImportBase : ComponentBase
             errorMessage = $"Error: {ex.Message}";
             Console.WriteLine($"Error importing JSON: {ex.Message}");
         }
-        finally
-        {
-            saving = false;
-            StateHasChanged();
-        }
+        finally { saving = false; StateHasChanged(); }
     }
 
     protected async Task HandleCancel()

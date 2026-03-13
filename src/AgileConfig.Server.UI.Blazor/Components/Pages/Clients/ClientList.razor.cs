@@ -1,5 +1,5 @@
-using AgileConfig.Server.UI.Blazor.Services;
-using AgileConfig.Server.UI.Blazor.Models;
+using AgileConfig.Server.Apisite.Client;
+using AgileConfig.Server.Apisite.Client.Models;
 using Microsoft.AspNetCore.Components;
 
 namespace AgileConfig.Server.UI.Blazor.Components.Pages.Clients;
@@ -7,18 +7,22 @@ namespace AgileConfig.Server.UI.Blazor.Components.Pages.Clients;
 public class ClientSearchModel
 {
     public string? Id { get; set; }
-    public string? AppId { get; set; }
     public string? Name { get; set; }
+    public string? AppId { get; set; }
+    public string? Address { get; set; }
     public string? Status { get; set; }
 }
 
 public class ClientListBase : ComponentBase, IDisposable
 {
-    [Inject] protected ApiClient ApiClient { get; set; } = default!;
+    [Inject] protected ReportApiClient ReportApi { get; set; } = default!;
 
-    protected List<ClientInfoModel> clients = new();
-    protected List<ClientInfoModel> filteredClients = new();
+    protected List<ClientInfo> clients = new();
+    protected List<ClientInfo> filteredClients = new();
     protected bool loading = false;
+    protected int pageIndex = 1;
+    protected int pageSize = 20;
+    protected int total = 0;
     protected ClientSearchModel searchModel = new();
 
     private Timer? _refreshTimer;
@@ -26,14 +30,9 @@ public class ClientListBase : ComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         await LoadClients();
-
         _refreshTimer = new Timer(async _ =>
         {
-            await InvokeAsync(async () =>
-            {
-                await LoadClients();
-                StateHasChanged();
-            });
+            await InvokeAsync(async () => { await LoadClients(); StateHasChanged(); });
         }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
     }
 
@@ -41,76 +40,28 @@ public class ClientListBase : ComponentBase, IDisposable
     {
         loading = true;
         StateHasChanged();
-
         try
         {
-            var response = await ApiClient.GetAsync<ApiResponse<List<ClientInfoModel>>>("/api/client");
-            if (response?.Success == true && response.Data != null)
+            var response = await ReportApi.SearchClientsAsync(pageIndex, pageSize,
+                appId: searchModel.AppId, address: searchModel.Address);
+            if (response != null)
             {
                 clients = response.Data;
-                ApplyFilters();
+                total = response.Total;
+                filteredClients = clients;
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading clients: {ex.Message}");
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Console.WriteLine($"Error loading clients: {ex.Message}"); }
+        finally { loading = false; StateHasChanged(); }
     }
 
-    protected void HandleSearch()
-    {
-        ApplyFilters();
-    }
+    protected async Task HandleSearch() => await LoadClients();
 
-    protected void HandleReset()
+    protected async Task HandleReset()
     {
         searchModel = new ClientSearchModel();
-        ApplyFilters();
+        await LoadClients();
     }
 
-    private void ApplyFilters()
-    {
-        filteredClients = clients.Where(client =>
-        {
-            // Filter by client ID
-            if (!string.IsNullOrWhiteSpace(searchModel.Id) &&
-                !client.Id.Contains(searchModel.Id, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            // Filter by app ID
-            if (!string.IsNullOrWhiteSpace(searchModel.AppId) &&
-                !client.AppId.Contains(searchModel.AppId, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            // Filter by name
-            if (!string.IsNullOrWhiteSpace(searchModel.Name) &&
-                !client.Name.Contains(searchModel.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            // Filter by status
-            if (!string.IsNullOrWhiteSpace(searchModel.Status) &&
-                !client.Status.Equals(searchModel.Status, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return true;
-        }).ToList();
-    }
-
-    public void Dispose()
-    {
-        _refreshTimer?.Dispose();
-    }
+    public void Dispose() => _refreshTimer?.Dispose();
 }
