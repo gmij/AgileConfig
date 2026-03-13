@@ -6,42 +6,51 @@
 <PageTitle>Services - AgileConfig</PageTitle>
 
 <div class="page-header">
-    <div class="page-header-content">
-        <h1>Service Registry</h1>
-    </div>
+    <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Service Registry</h1>
 </div>
 
 <div class="page-content">
     <div class="search-panel">
-        <Form Model="@searchModel" Layout="@FormLayout.Inline">
-            <FormItem Label="Service ID">
-                <Input @bind-Value="@searchModel.ServiceId" Placeholder="Search by service ID" Style="width: 200px;" />
-            </FormItem>
-            <FormItem Label="Service Name">
-                <Input @bind-Value="@searchModel.ServiceName" Placeholder="Search by service name" Style="width: 200px;" />
-            </FormItem>
-            <FormItem Label="Status">
-                <Select TItemValue="string"
-                        TItem="string"
-                        @bind-Value="@searchModel.Status"
-                        Placeholder="All"
-                        Style="width: 150px;"
-                        AllowClear>
-                    <SelectOption TItemValue="string" TItem="string" Value="@("Healthy")" Label="Healthy" />
-                    <SelectOption TItemValue="string" TItem="string" Value="@("Unhealthy")" Label="Unhealthy" />
-                </Select>
-            </FormItem>
-            <FormItem>
-                <Space>
-                    <SpaceItem>
-                        <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
-                    </SpaceItem>
-                    <SpaceItem>
-                        <Button OnClick="@HandleReset">Reset</Button>
-                    </SpaceItem>
-                </Space>
-            </FormItem>
-        </Form>
+        <Space Wrap Size="@("16")">
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Service ID</span>
+                    <Input @bind-Value="@searchModel.ServiceId" Placeholder="Search by service ID" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Service Name</span>
+                    <Input @bind-Value="@searchModel.ServiceName" Placeholder="Search by service name" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Status</span>
+                    <Select TItemValue="string"
+                            TItem="string"
+                            @bind-Value="@searchModel.Status"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Healthy")" Label="Healthy" />
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Unhealthy")" Label="Unhealthy" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="display: flex; align-items: flex-end; height: 100%;">
+                    <Space Style="margin-top: 22px;">
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Button OnClick="@HandleReset">Reset</Button>
+                        </SpaceItem>
+                    </Space>
+                </div>
+            </SpaceItem>
+        </Space>
     </div>
     <Table TItem="ServiceInfoModel"
            DataSource="@filteredServices"

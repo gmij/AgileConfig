@@ -1,5 +1,6 @@
 using AgileConfig.Server.UI.Blazor.Components;
 using AgileConfig.Server.UI.Blazor.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,9 @@ builder.Services.AddRazorComponents()
 
 // Add AntDesign
 builder.Services.AddAntDesign();
+
+// Add HttpContextAccessor for cookie-based auth persistence across F5 refresh
+builder.Services.AddHttpContextAccessor();
 
 // Add HTTP Client and Services
 builder.Services.AddScoped<AuthHttpHandler>();
@@ -44,7 +48,6 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
     provider.GetRequiredService<CustomAuthenticationStateProvider>());
-builder.Services.AddScoped<AuthenticationService>();
 
 var app = builder.Build();
 
@@ -64,6 +67,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
+
+// Logout: clear cookie → redirect to login (needs real HTTP request)
+app.MapGet("/api/auth/logout", async (HttpContext httpContext) =>
+{
+    await httpContext.SignOutAsync("Blazor.Cookie");
+    httpContext.Response.Redirect("/login");
+}).AllowAnonymous();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

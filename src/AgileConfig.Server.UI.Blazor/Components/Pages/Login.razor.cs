@@ -1,87 +1,83 @@
-using AgileConfig.Server.UI.Blazor.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
+using System.Security.Claims;
 
 namespace AgileConfig.Server.UI.Blazor.Components.Pages;
 
 public class LoginBase : ComponentBase
 {
-    [Inject] protected AuthenticationService AuthService { get; set; } = default!;
-    [Inject] protected NavigationManager Navigation { get; set; } = default!;
-    [Inject] protected HttpClient HttpClient { get; set; } = default!;
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
 
-    protected LoginModel loginModel = new();
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? ErrorCode { get; set; }
+
     protected string? errorMessage;
-    protected bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        // Check if SA password has been initialized
+        if (!string.IsNullOrEmpty(ErrorCode))
+        {
+            errorMessage = "Invalid username or password";
+        }
+
+        if (HttpMethods.IsPost(HttpContext.Request.Method))
+        {
+            await HandleLoginAsync();
+        }
+    }
+
+    private async Task HandleLoginAsync()
+    {
+        var form = await HttpContext.Request.ReadFormAsync();
+        var username = form["username"].ToString();
+        var password = form["password"].ToString();
+
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        {
+            errorMessage = "Username and password are required";
+            return;
+        }
+
+        var config = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var baseUrl = config["ApiBaseUrl"] ?? "http://localhost:5000";
+        using var client = new HttpClient { BaseAddress = new Uri(baseUrl) };
+        var json = System.Text.Json.JsonSerializer.Serialize(new { userName = username, password });
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
         try
         {
-            var response = await HttpClient.GetAsync("/home/sys");
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var sysInfo = System.Text.Json.JsonSerializer.Deserialize<SystemInfo>(content, new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+            var response = await client.PostAsync("/admin/jwt/login", content);
 
-                if (sysInfo != null && !sysInfo.PasswordInited)
-                {
-                    // Redirect to initpassword page in the same window
-                    Navigation.NavigateTo("/initpassword", forceLoad: false);
-                }
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = "Invalid username or password";
+                return;
             }
+
+            var result = await response.Content.ReadFromJsonAsync<JwtLoginResponse>();
+            if (result?.Status != "ok" || string.IsNullOrEmpty(result.Token))
+            {
+                errorMessage = "Invalid username or password";
+                return;
+            }
+
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.Name, username),
+                new("token", result.Token)
+            };
+            var identity = new ClaimsIdentity(claims, "Blazor.Cookie");
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync("Blazor.Cookie", principal);
+            HttpContext.Response.Redirect("/");
         }
         catch
         {
-            // If the API call fails, continue to show login page
+            errorMessage = "Login failed, please try again";
         }
     }
 
-    protected async Task OnFinish(EditContext editContext)
-    {
-        isLoading = true;
-        errorMessage = null;
-        StateHasChanged();
-
-        try
-        {
-            var success = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
-
-            if (success)
-            {
-                Navigation.NavigateTo("/");
-            }
-            else
-            {
-                errorMessage = "Invalid username or password";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Login failed: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    protected class LoginModel
-    {
-        public string Username { get; set; } = "admin";
-        public string Password { get; set; } = "";
-    }
-
-    protected class SystemInfo
-    {
-        public string? AppVer { get; set; }
-        public bool PasswordInited { get; set; }
-        public bool SsoEnabled { get; set; }
-        public string? SsoButtonText { get; set; }
-    }
+    private record JwtLoginResponse(string? Status, string? Token, string? Type);
 }

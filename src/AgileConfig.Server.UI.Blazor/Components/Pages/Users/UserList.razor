@@ -6,60 +6,65 @@
 <PageTitle>Users - AgileConfig</PageTitle>
 
 <div class="page-header">
-    <div class="page-header-content">
-        <h1>User Management</h1>
-        <div class="page-header-extra">
-            <Space>
-                <SpaceItem>
-                    <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
-                        Add User
-                    </Button>
-                </SpaceItem>
-            </Space>
-        </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">User Management</h1>
+        <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+            Add User
+        </Button>
     </div>
 </div>
 
 <div class="page-content">
     <div class="search-panel">
-        <Form Model="@searchModel" Layout="@FormLayout.Inline">
-            <FormItem Label="Username">
-                <Input @bind-Value="@searchModel.UserName" Placeholder="Search by username" Style="width: 200px;" />
-            </FormItem>
-            <FormItem Label="Role">
-                <Select TItemValue="string"
-                        TItem="string"
-                        @bind-Value="@searchModel.Role"
-                        Placeholder="All"
-                        Style="width: 150px;"
-                        AllowClear>
-                    <SelectOption TItemValue="string" TItem="string" Value="@("SuperAdmin")" Label="Super Admin" />
-                    <SelectOption TItemValue="string" TItem="string" Value="@("Administrator")" Label="Administrator" />
-                    <SelectOption TItemValue="string" TItem="string" Value="@("Operator")" Label="Operator" />
-                </Select>
-            </FormItem>
-            <FormItem Label="Status">
-                <Select TItemValue="bool?"
-                        TItem="string"
-                        @bind-Value="@searchModel.Enabled"
-                        Placeholder="All"
-                        Style="width: 120px;"
-                        AllowClear>
-                    <SelectOption TItemValue="bool?" TItem="string" Value="@(true)" Label="Enabled" />
-                    <SelectOption TItemValue="bool?" TItem="string" Value="@(false)" Label="Disabled" />
-                </Select>
-            </FormItem>
-            <FormItem>
-                <Space>
-                    <SpaceItem>
-                        <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
-                    </SpaceItem>
-                    <SpaceItem>
-                        <Button OnClick="@HandleReset">Reset</Button>
-                    </SpaceItem>
-                </Space>
-            </FormItem>
-        </Form>
+        <Space Wrap Size="@("16")">
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Username</span>
+                    <Input @bind-Value="@searchModel.UserName" Placeholder="Search by username" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Role</span>
+                    <Select TItemValue="string"
+                            TItem="string"
+                            @bind-Value="@searchModel.Role"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="string" TItem="string" Value="@("SuperAdmin")" Label="Super Admin" />
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Administrator")" Label="Administrator" />
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Operator")" Label="Operator" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Status</span>
+                    <Select TItemValue="bool?"
+                            TItem="string"
+                            @bind-Value="@searchModel.Enabled"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="bool?" TItem="string" Value="@(true)" Label="Enabled" />
+                        <SelectOption TItemValue="bool?" TItem="string" Value="@(false)" Label="Disabled" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="display: flex; align-items: flex-end; height: 100%;">
+                    <Space Style="margin-top: 22px;">
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Button OnClick="@HandleReset">Reset</Button>
+                        </SpaceItem>
+                    </Space>
+                </div>
+            </SpaceItem>
+        </Space>
     </div>
     <Table TItem="UserModel"
            DataSource="@filteredUsers"

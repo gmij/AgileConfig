@@ -1,7 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using AgileConfig.Server.UI.Blazor.Services
 @using Microsoft.AspNetCore.Components.Authorization
-@inject AuthenticationService AuthService
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -112,9 +111,10 @@
         Navigation.LocationChanged += (s, e) => UpdateSelectedKeys();
     }
 
-    private async Task HandleLogout()
+    private void HandleLogout()
     {
-        await AuthService.Logout();
+        // Navigate to logout endpoint with forceLoad to clear cookie via real HTTP request
+        Navigation.NavigateTo("/api/auth/logout", forceLoad: true);
     }
 
     private void UpdateSelectedKeys()

@@ -6,22 +6,20 @@
 <PageTitle>Applications - AgileConfig</PageTitle>
 
 <div class="page-header">
-    <div class="page-header-content">
-        <h1>Applications</h1>
-        <div class="page-header-extra">
-            <Space>
-                <SpaceItem>
-                    <Checkbox @bind-Checked="@groupAggregation" OnChange="@OnGroupAggregationChange">
-                        Group Aggregation
-                    </Checkbox>
-                </SpaceItem>
-                <SpaceItem>
-                    <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
-                        Add Application
-                    </Button>
-                </SpaceItem>
-            </Space>
-        </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Applications</h1>
+        <Space>
+            <SpaceItem>
+                <Checkbox @bind-Checked="@groupAggregation" OnChange="@OnGroupAggregationChange">
+                    Group Aggregation
+                </Checkbox>
+            </SpaceItem>
+            <SpaceItem>
+                <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+                    Add Application
+                </Button>
+            </SpaceItem>
+        </Space>
     </div>
 </div>
 

@@ -6,48 +6,50 @@
 <PageTitle>Server Nodes - AgileConfig</PageTitle>
 
 <div class="page-header">
-    <div class="page-header-content">
-        <h1>Server Node Management</h1>
-        <div class="page-header-extra">
-            <Space>
-                <SpaceItem>
-                    <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
-                        Add Node
-                    </Button>
-                </SpaceItem>
-            </Space>
-        </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Server Node Management</h1>
+        <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+            Add Node
+        </Button>
     </div>
 </div>
 
 <div class="page-content">
     <div class="search-panel">
-        <Form Model="@searchModel" Layout="@FormLayout.Inline">
-            <FormItem Label="Address">
-                <Input @bind-Value="@searchModel.Address" Placeholder="Search by address" Style="width: 200px;" />
-            </FormItem>
-            <FormItem Label="Status">
-                <Select TItemValue="int?"
-                        TItem="string"
-                        @bind-Value="@searchModel.Status"
-                        Placeholder="All"
-                        Style="width: 120px;"
-                        AllowClear>
-                    <SelectOption TItemValue="int?" TItem="string" Value="@(1)" Label="Online" />
-                    <SelectOption TItemValue="int?" TItem="string" Value="@(0)" Label="Offline" />
-                </Select>
-            </FormItem>
-            <FormItem>
-                <Space>
-                    <SpaceItem>
-                        <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
-                    </SpaceItem>
-                    <SpaceItem>
-                        <Button OnClick="@HandleReset">Reset</Button>
-                    </SpaceItem>
-                </Space>
-            </FormItem>
-        </Form>
+        <Space Wrap Size="@("16")">
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Address</span>
+                    <Input @bind-Value="@searchModel.Address" Placeholder="Search by address" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Status</span>
+                    <Select TItemValue="int?"
+                            TItem="string"
+                            @bind-Value="@searchModel.Status"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="int?" TItem="string" Value="@(1)" Label="Online" />
+                        <SelectOption TItemValue="int?" TItem="string" Value="@(0)" Label="Offline" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="display: flex; align-items: flex-end; height: 100%;">
+                    <Space Style="margin-top: 22px;">
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Button OnClick="@HandleReset">Reset</Button>
+                        </SpaceItem>
+                    </Space>
+                </div>
+            </SpaceItem>
+        </Space>
     </div>
 
     <Table TItem="ServerNodeModel"
