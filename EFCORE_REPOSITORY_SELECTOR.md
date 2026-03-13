@@ -13,7 +13,7 @@ The repository selector pattern allows AgileConfig to support multiple data pers
 
 2. **EFCoreRepositoryServiceRegister** (`AgileConfig.Server.Data.Repository.EFCore`)
    - Implements registration logic for EF Core repositories
-   - Recognizes provider name: `"efcore"` (case-insensitive)
+   - Recognizes provider formats: `"efcore"` or `"efcore:dbtype"` (case-insensitive)
    - Registers all repositories and Unit of Work
 
 3. **RepositoryExtension** (`AgileConfig.Server.Data.Repository.Selector`)
@@ -33,15 +33,15 @@ The repository selector pattern allows AgileConfig to support multiple data pers
 ```json
 {
   "db": {
-    "provider": "efcore",  // Use EF Core
-    "conn": "Data Source=agile_config.db",  // Connection string
+    "provider": "efcore:mysql",  // Use EF Core with MySQL
+    "conn": "Server=localhost;Database=agileconfig;User=root;Password=pass;",
     "env": {
       "TEST": {
-        "provider": "sqlserver",  // SQL Server for TEST env
+        "provider": "efcore:sqlserver",  // SQL Server for TEST env
         "conn": "Server=localhost;Database=AgileConfig_Test;..."
       },
       "PROD": {
-        "provider": "npgsql",  // PostgreSQL for PROD env
+        "provider": "efcore:postgresql",  // PostgreSQL for PROD env
         "conn": "Host=localhost;Database=AgileConfig_Prod;..."
       }
     }
@@ -49,15 +49,23 @@ The repository selector pattern allows AgileConfig to support multiple data pers
 }
 ```
 
-### Supported Provider Names
+**Note**: You can also use just `"efcore"` which will default to SQLite.
 
-When using EF Core, you can specify these provider names:
+### Supported Provider Formats
 
-- `"efcore"` - Generic EF Core (defaults to SQLite if connection string doesn't specify)
-- `"sqlserver"` - Microsoft SQL Server
-- `"mysql"` - MySQL (using MySql.EntityFrameworkCore 10.0.1)
-- `"npgsql"` or `"postgresql"` - PostgreSQL
-- `"sqlite"` - SQLite
+When using EF Core, you can specify the provider in two formats:
+
+**Format 1: Colon-separated format (Recommended)**
+- `"efcore:mysql"` - EF Core with MySQL
+- `"efcore:sqlserver"` - EF Core with SQL Server
+- `"efcore:postgresql"` or `"efcore:npgsql"` - EF Core with PostgreSQL
+- `"efcore:sqlite"` - EF Core with SQLite
+
+**Format 2: Plain format**
+- `"efcore"` - EF Core with default (SQLite)
+
+**Why use the colon-separated format?**
+The colon-separated format explicitly specifies which database type to use with EF Core, avoiding confusion with FreeSql provider names. This ensures that the correct ORM and database combination is selected.
 
 ## How It Works
 
@@ -108,15 +116,55 @@ When using EF Core, you can specify these provider names:
 ```csharp
 public bool IsSuit4Provider(string provider)
 {
-    return provider.Equals("efcore", StringComparison.OrdinalIgnoreCase);
+    // Support both "efcore" and "efcore:dbtype" formats
+    // Examples: "efcore", "efcore:mysql", "efcore:sqlserver", "efcore:postgresql", "efcore:sqlite"
+    return provider.Equals("efcore", StringComparison.OrdinalIgnoreCase) ||
+           provider.StartsWith("efcore:", StringComparison.OrdinalIgnoreCase);
 }
 ```
 
-The `EFCoreRepositoryServiceRegister` matches when the provider is `"efcore"` (case-insensitive).
+The `EFCoreRepositoryServiceRegister` matches when:
+- Provider is exactly `"efcore"` (case-insensitive) - defaults to SQLite
+- Provider starts with `"efcore:"` (case-insensitive) - uses specified database type
 
-For database-specific configuration, use the database name directly:
-- `"sqlserver"` → Will match `EFCoreRepositoryServiceRegister` only if provider is exactly `"efcore"`
-- Database type is determined in `EFCoreServiceExtension.ConfigureDbContext()`
+### Database Type Extraction
+
+The database type is extracted in `EFCoreServiceExtension.ConfigureDbContext()`:
+
+```csharp
+string dbType = "sqlite"; // default
+if (provider.Contains(":"))
+{
+    var parts = provider.Split(':', 2);
+    if (parts.Length == 2)
+    {
+        dbType = parts[1].Trim().ToLower();
+    }
+}
+else if (provider.Equals("efcore", StringComparison.OrdinalIgnoreCase))
+{
+    dbType = "sqlite"; // default when just "efcore"
+}
+
+switch (dbType)
+{
+    case "sqlserver":
+        options.UseSqlServer(connectionString);
+        break;
+    case "mysql":
+        options.UseMySQL(connectionString);
+        break;
+    case "npgsql":
+    case "postgresql":
+        options.UseNpgsql(connectionString);
+        break;
+    case "sqlite":
+        options.UseSqlite(connectionString);
+        break;
+    default:
+        throw new NotSupportedException($"Database type '{dbType}' from provider '{provider}' is not supported...");
+}
+```
 
 ## Adding a New Repository Provider
 
@@ -133,18 +181,23 @@ To add a new repository provider (e.g., Dapper, LiteDB):
 Test the repository selector by setting different providers in appsettings:
 
 ```bash
-# Test with SQLite
+# Test with SQLite (default)
 dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore --db:conn="Data Source=test.db"
 
+# Test with SQLite (explicit)
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore:sqlite --db:conn="Data Source=test.db"
+
 # Test with SQL Server
-dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=sqlserver --db:conn="Server=localhost;..."
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore:sqlserver --db:conn="Server=localhost;..."
 
 # Test with MySQL
-dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=mysql --db:conn="Server=localhost;Database=agileconfig;..."
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore:mysql --db:conn="Server=localhost;Database=agileconfig;..."
 
 # Test with PostgreSQL
-dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=npgsql --db:conn="Host=localhost;..."
+dotnet run --project src/AgileConfig.Server.Apisite -- --db:provider=efcore:postgresql --db:conn="Host=localhost;..."
 ```
+
+**Important**: Do NOT use plain database names like `"mysql"` or `"sqlserver"` when you want to use EF Core, as these will be matched by FreeSql first. Always use the `"efcore:dbtype"` format for EF Core.
 
 ## Troubleshooting
 
