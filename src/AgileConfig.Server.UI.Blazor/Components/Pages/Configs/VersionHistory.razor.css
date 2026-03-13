@@ -1,0 +1,12 @@
+.history-container {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.history-version-table {
+    margin-bottom: 24px;
+}
+
+.history-version-table:last-child {
+    margin-bottom: 0;
+}

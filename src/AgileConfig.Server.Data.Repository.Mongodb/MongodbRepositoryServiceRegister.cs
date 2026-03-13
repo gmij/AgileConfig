@@ -55,12 +55,7 @@ public class MongodbRepositoryServiceRegister : IRepositoryServiceRegister
 
     public bool IsSuit4Provider(string provider)
     {
-        switch (provider.ToLower())
-        {
-            case "mongodb":
-                return true;
-        }
-
-        return false;
+        // Check if ORM provider is "mongodb"
+        return provider.Equals("mongodb", StringComparison.OrdinalIgnoreCase);
     }
 }

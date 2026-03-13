@@ -1,0 +1,136 @@
+@page "/users"
+@attribute [Authorize]
+@inherits UserListBase
+@using AgileConfig.Server.Apisite.Client.Models
+@using AgileConfig.Server.UI.Blazor.Models
+
+<PageTitle>Users - AgileConfig</PageTitle>
+
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">User Management</h1>
+        <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+            Add User
+        </Button>
+    </div>
+</div>
+
+<div class="page-content">
+    <div class="search-panel">
+        <Space Wrap Size="@("16")">
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Username</span>
+                    <Input @bind-Value="@searchModel.UserName" Placeholder="Search by username" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Role</span>
+                    <Select TItemValue="string"
+                            TItem="string"
+                            @bind-Value="@searchModel.Role"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="string" TItem="string" Value="@("SuperAdmin")" Label="Super Admin" />
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Administrator")" Label="Administrator" />
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Operator")" Label="Operator" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Status</span>
+                    <Select TItemValue="int?"
+                            TItem="string"
+                            @bind-Value="@searchModel.StatusFilter"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="int?" TItem="string" Value="@(0)" Label="Normal" />
+                        <SelectOption TItemValue="int?" TItem="string" Value="@(1)" Label="Deleted" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="display: flex; align-items: flex-end; height: 100%;">
+                    <Space Style="margin-top: 22px;">
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Button OnClick="@HandleReset">Reset</Button>
+                        </SpaceItem>
+                    </Space>
+                </div>
+            </SpaceItem>
+        </Space>
+    </div>
+    <Table TItem="UserInfo"
+           DataSource="@filteredUsers"
+           Loading="@loading"
+           @bind-PageIndex="@pageIndex"
+           @bind-PageSize="@pageSize"
+           Total="@total">
+        <PropertyColumn Property="u => u.UserName" Title="Username" />
+        <PropertyColumn Property="u => u.Team" Title="Team" />
+        <PropertyColumn Property="u => u.UserRoleNames" Title="Roles">
+            @foreach (var role in context.UserRoleNames)
+            {
+                <Tag Color="@("blue")">@role</Tag>
+            }
+        </PropertyColumn>
+        <PropertyColumn Property="u => u.Status" Title="Status">
+            @if (context.Status == 0)
+            {
+                <Badge Status="@BadgeStatus.Success" Text="Normal" />
+            }
+            else
+            {
+                <Badge Status="@BadgeStatus.Default" Text="Deleted" />
+            }
+        </PropertyColumn>
+        <ActionColumn Title="Actions">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Link" OnClick="@(() => ShowEditModal(context))">Edit</Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Popconfirm Title="@($"Delete user {context.UserName}?")" OnConfirm="@(() => DeleteUser(context))">
+                        <Button Type="@ButtonType.Link" Danger>Delete</Button>
+                    </Popconfirm>
+                </SpaceItem>
+            </Space>
+        </ActionColumn>
+    </Table>
+</div>
+
+<Modal Title="@(isEditMode ? "Edit User" : "Add User")"
+       @bind-Visible="@modalVisible"
+       OnOk="@HandleSubmit"
+       OnCancel="@(() => modalVisible = false)"
+       ConfirmLoading="@saving">
+    <Form Model="@currentUser" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+        <ChildContent Context="formContext">
+            <FormItem Label="Username" Required>
+                <Input @bind-Value="@formContext.UserName" Placeholder="Enter username" Disabled="@isEditMode" />
+            </FormItem>
+            <FormItem Label="Password" Required="@(!isEditMode)">
+                <InputPassword @bind-Value="@formContext.Password" Placeholder="@(isEditMode ? "Leave blank to keep current" : "Enter password")" />
+            </FormItem>
+            <FormItem Label="Roles">
+                <Select TItemValue="string"
+                        TItem="string"
+                        Values="@formContext.Roles"
+                        ValuesChanged="@((values) => formContext.Roles = values.ToList())"
+                        Mode="@SelectMode.Multiple"
+                        Placeholder="Select roles">
+                    <SelectOption TItemValue="string" TItem="string" Value="@("SuperAdmin")" Label="Super Admin" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Administrator")" Label="Administrator" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("Operator")" Label="Operator" />
+                </Select>
+            </FormItem>
+        </ChildContent>
+    </Form>
+</Modal>

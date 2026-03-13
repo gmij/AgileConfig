@@ -1,0 +1,200 @@
+@page "/apps"
+@attribute [Authorize]
+@inherits AppListBase
+@using AgileConfig.Server.Apisite.Client.Models
+@using AgileConfig.Server.UI.Blazor.Models
+
+<PageTitle>Applications - AgileConfig</PageTitle>
+
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Applications</h1>
+        <Space>
+            <SpaceItem>
+                <Checkbox @bind-Checked="@groupAggregation" OnChange="@OnGroupAggregationChange">
+                    Group Aggregation
+                </Checkbox>
+            </SpaceItem>
+            <SpaceItem>
+                <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+                    Add Application
+                </Button>
+            </SpaceItem>
+        </Space>
+    </div>
+</div>
+
+<div class="page-content">
+    <Table TItem="AppInfo"
+           DataSource="@apps"
+           Loading="@loading"
+           @bind-PageIndex="@pageIndex"
+           @bind-PageSize="@pageSize"
+           Total="@total">
+        <PropertyColumn Property="c => c.Name" Title="App Name" Sortable />
+        <PropertyColumn Property="c => c.Id" Title="App ID" Sortable>
+            <Text Copyable>@context.Id</Text>
+        </PropertyColumn>
+        <PropertyColumn Property="c => c.Secret" Title="Secret">
+            <Text Copyable CopyConfig="new() { Text = context.Secret }">
+                <Password Value="@context.Secret" />
+            </Text>
+        </PropertyColumn>
+        <PropertyColumn Property="c => c.Group" Title="Group" Sortable />
+        <PropertyColumn Property="c => c.CreateTime" Title="Create Time" Sortable>
+            @context.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss")
+        </PropertyColumn>
+        <PropertyColumn Property="c => c.Inheritanced" Title="Public">
+            @if (context.Inheritanced)
+            {
+                <Tag Color="@("success")">Public</Tag>
+            }
+            else
+            {
+                <Tag>Private</Tag>
+            }
+        </PropertyColumn>
+        <PropertyColumn Property="c => c.InheritancedAppNames" Title="Linked Apps">
+            @if (context.InheritancedAppNames != null)
+            {
+                @foreach (var name in context.InheritancedAppNames)
+                {
+                    <Tag Color="@("blue")">@name</Tag>
+                }
+            }
+        </PropertyColumn>
+        <PropertyColumn Property="c => c.Enabled" Title="Enabled">
+            <Switch Checked="@context.Enabled" OnChange="@(async (e) => await ToggleEnabled(context))" Size="@InputSize.Small" />
+        </PropertyColumn>
+        <ActionColumn Title="Actions">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Link" OnClick="@(() => NavigateToConfigs(context))">
+                        Configs
+                    </Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Link" OnClick="@(() => ShowEditModal(context))">
+                        Edit
+                    </Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Link" OnClick="@(() => ShowAuthModal(context))">
+                        Auth
+                    </Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Popconfirm Title="@($"Are you sure to delete {context.Name}?")"
+                                OnConfirm="@(() => DeleteApp(context))">
+                        <Button Type="@ButtonType.Link" Danger>Delete</Button>
+                    </Popconfirm>
+                </SpaceItem>
+            </Space>
+        </ActionColumn>
+    </Table>
+</div>
+
+<Modal Title="@(isEditMode ? "Edit Application" : "Add Application")"
+       @bind-Visible="@modalVisible"
+       OnOk="@HandleSubmit"
+       OnCancel="@HandleCancel"
+       ConfirmLoading="@saving">
+    <Form Model="@currentApp" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+        <ChildContent Context="formContext">
+            <FormItem Label="Name" Required>
+                <Input @bind-Value="@formContext.Name" Placeholder="Enter application name" />
+            </FormItem>
+            <FormItem Label="ID" Required>
+                <Input @bind-Value="@formContext.Id" Placeholder="Enter application ID" Disabled="@isEditMode" />
+            </FormItem>
+            <FormItem Label="Secret">
+                <InputPassword @bind-Value="@formContext.Secret" Placeholder="Enter secret (optional)" />
+            </FormItem>
+            <FormItem Label="Group">
+                <Select TItemValue="string"
+                        TItem="string"
+                        @bind-Value="@formContext.Group"
+                        Placeholder="Select or enter group"
+                        Mode="@SelectMode.Tags">
+                    @foreach (var group in appGroups)
+                    {
+                        <SelectOption TItemValue="string" TItem="string" Value="@group" Label="@group" />
+                    }
+                </Select>
+            </FormItem>
+            <FormItem Label="Public">
+                <Switch @bind-Checked="@formContext.Inheritanced" />
+                <Text Type="@TextElementType.Secondary" Style="margin-left: 10px;">
+                    Public apps can be inherited by other apps
+                </Text>
+            </FormItem>
+            @if (!formContext.Inheritanced)
+            {
+                <FormItem Label="Link to Apps">
+                    <Select TItemValue="string"
+                            TItem="string"
+                            Values="@formContext.InheritancedApps"
+                            ValuesChanged="@((values) => formContext.InheritancedApps = values.ToList())"
+                            Mode="@SelectMode.Multiple"
+                            Placeholder="Select apps to inherit from">
+                        @foreach (var app in publicApps)
+                        {
+                            <SelectOption TItemValue="string" TItem="string" Value="@app.Id" Label="@app.Name" />
+                        }
+                    </Select>
+                </FormItem>
+            }
+            <FormItem Label="Enabled">
+                <Switch @bind-Checked="@formContext.Enabled" />
+            </FormItem>
+        </ChildContent>
+    </Form>
+</Modal>
+
+<Modal Title="@($"User Authorization - {currentApp?.Name}")"
+       @bind-Visible="@authModalVisible"
+       OnOk="@HandleAuthSubmit"
+       OnCancel="@(() => authModalVisible = false)"
+       Width="800"
+       ConfirmLoading="@saving">
+    <Table TItem="UserAuthModel" DataSource="@userAuths" Size="@TableSize.Small" HidePagination>
+        <ChildContent Context="userAuthContext">
+            <PropertyColumn Property="u => u.UserName" Title="Username" />
+            <PropertyColumn Property="u => u.Permission" Title="Permission">
+                <Select TItemValue="string"
+                        TItem="string"
+                        @bind-Value="@userAuthContext.Permission"
+                        Style="width: 150px;">
+                    <SelectOption TItemValue="string" TItem="string" Value="@("R")" Label="Read" />
+                    <SelectOption TItemValue="string" TItem="string" Value="@("RW")" Label="Read & Write" />
+                </Select>
+            </PropertyColumn>
+            <ActionColumn Title="Actions">
+                <Popconfirm Title="Remove this user?" OnConfirm="@(() => RemoveUserAuth(userAuthContext))">
+                    <Button Type="@ButtonType.Link" Danger Size="@ButtonSize.Small">Remove</Button>
+                </Popconfirm>
+            </ActionColumn>
+        </ChildContent>
+    </Table>
+    <Divider />
+    <Space Direction="@SpaceDirection.Horizontal">
+        <SpaceItem>
+            <Input @bind-Value="@newUserName" Placeholder="Enter username" Style="width: 200px;" />
+        </SpaceItem>
+        <SpaceItem>
+            <Select TItemValue="string"
+                    TItem="string"
+                    @bind-Value="@newUserPermission"
+                    Placeholder="Select permission"
+                    Style="width: 150px;">
+                <SelectOption TItemValue="string" TItem="string" Value="@("R")" Label="Read" />
+                <SelectOption TItemValue="string" TItem="string" Value="@("RW")" Label="Read & Write" />
+            </Select>
+        </SpaceItem>
+        <SpaceItem>
+            <Button Type="@ButtonType.Primary" OnClick="@AddUserAuth" Icon="@IconType.Outline.Plus">
+                Add User
+            </Button>
+        </SpaceItem>
+    </Space>
+</Modal>

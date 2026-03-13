@@ -1,0 +1,38 @@
+@page "/login"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [AllowAnonymous]
+@inherits LoginBase
+
+<PageTitle>Login - AgileConfig</PageTitle>
+
+<div class="login-container">
+    <Card Title="AgileConfig Login" Class="login-card">
+        <Body>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-message">
+                    @errorMessage
+                </div>
+            }
+
+            <form method="post" @formname="login">
+                <div class="form-item">
+                    <label class="form-label">Username</label>
+                    <input name="username" type="text" value="admin" placeholder="Enter username" class="ant-input" />
+                </div>
+                <div class="form-item">
+                    <label class="form-label">Password</label>
+                    <input name="password" type="password" placeholder="Enter password" class="ant-input" />
+                </div>
+                <div>
+                    <button type="submit" class="ant-btn ant-btn-primary ant-btn-block">
+                        <span>Login</span>
+                    </button>
+                </div>
+                <AntiforgeryToken />
+            </form>
+        </Body>
+    </Card>
+</div>

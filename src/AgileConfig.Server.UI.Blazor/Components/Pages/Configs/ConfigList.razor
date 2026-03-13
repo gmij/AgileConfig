@@ -1,0 +1,224 @@
+@page "/configs/{AppId}/{AppName}"
+@attribute [Authorize]
+@inherits ConfigListBase
+@using AgileConfig.Server.Apisite.Client.Models
+
+<PageTitle>Configs - @AppName - AgileConfig</PageTitle>
+
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>@AppName</h1>
+        <div class="page-header-extra">
+            <RadioGroup @bind-Value="@currentEnv" ButtonStyle="@RadioButtonStyle.Solid">
+                @foreach (var env in envList)
+                {
+                    <RadioButton RadioButton Value="@env">@env</RadioButton>
+                }
+            </RadioGroup>
+        </div>
+    </div>
+</div>
+
+<div class="page-content">
+    <Space Direction="@SpaceDirection.Vertical" Style="width: 100%;" Size="@("middle")">
+        <SpaceItem>
+            <Space>
+                @if (waitPublishStatus.AddCount > 0)
+                {
+                    <SpaceItem>
+                        <Badge Count="@waitPublishStatus.AddCount" OffsetX="-5">
+                            <Tag Color="@("blue")">New</Tag>
+                        </Badge>
+                    </SpaceItem>
+                }
+                @if (waitPublishStatus.EditCount > 0)
+                {
+                    <SpaceItem>
+                        <Badge Count="@waitPublishStatus.EditCount" OffsetX="-5">
+                            <Tag Color="@("gold")">Modified</Tag>
+                        </Badge>
+                    </SpaceItem>
+                }
+                @if (waitPublishStatus.DeleteCount > 0)
+                {
+                    <SpaceItem>
+                        <Badge Count="@waitPublishStatus.DeleteCount" OffsetX="-5">
+                            <Tag Color="@("red")">Deleted</Tag>
+                        </Badge>
+                    </SpaceItem>
+                }
+            </Space>
+        </SpaceItem>
+        <SpaceItem>
+            <Table TItem="ConfigInfo"
+                   DataSource="@configs"
+                   Loading="@loading"
+                   @bind-SelectedRows="@selectedRows">
+                <ToolbarTemplate>
+                    <Space>
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+                                Add
+                            </Button>
+                        </SpaceItem>
+                        @if (HasWaitPublish())
+                        {
+                            <SpaceItem>
+                                <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.CloudUpload" OnClick="@ShowPublishModal">
+                                    @(selectedRows.Any(x => x.EditStatus != 10) ? "Publish Selected" : "Publish All")
+                                </Button>
+                            </SpaceItem>
+                        }
+                        @if (selectedRows.Any(x => x.EditStatus != 10))
+                        {
+                            <SpaceItem>
+                                <Button Icon="@IconType.Outline.Rollback" OnClick="@CancelEditSelected">
+                                    Cancel Edit
+                                </Button>
+                            </SpaceItem>
+                        }
+                        @if (selectedRows.Any())
+                        {
+                            <SpaceItem>
+                                <Popconfirm Title="Delete selected configs?" OnConfirm="@DeleteSelected">
+                                    <Button Danger Icon="@IconType.Outline.Delete">Delete</Button>
+                                </Popconfirm>
+                            </SpaceItem>
+                        }
+                        <SpaceItem>
+                            <Dropdown>
+                                <Overlay>
+                                    <Menu>
+                                        <MenuItem OnClick="@ShowVersionHistory">Version History</MenuItem>
+                                        <MenuItem OnClick="@ShowEnvSync">Environment Sync</MenuItem>
+                                        <MenuItem OnClick="@ShowJsonImport">Import JSON</MenuItem>
+                                        <MenuItem OnClick="@ExportJson">Export JSON</MenuItem>
+                                    </Menu>
+                                </Overlay>
+                                <ChildContent>
+                                    <Button>
+                                        More <Icon Type="@IconType.Outline.Down" />
+                                    </Button>
+                                </ChildContent>
+                            </Dropdown>
+                        </SpaceItem>
+                    </Space>
+                </ToolbarTemplate>
+                <Selection Key="@(context.Id)" />
+                <PropertyColumn Property="c => c.Group" Title="Group" Sortable>
+                    <Text Copyable>@context.Group</Text>
+                </PropertyColumn>
+                <PropertyColumn Property="c => c.Key" Title="Key">
+                    <Text Copyable>@context.Key</Text>
+                </PropertyColumn>
+                <PropertyColumn Property="c => c.Value" Title="Value" Ellipsis>
+                    <Text Copyable>@context.Value</Text>
+                </PropertyColumn>
+                <PropertyColumn Property="c => c.Description" Title="Description" Ellipsis />
+                <PropertyColumn Property="c => c.CreateTime" Title="Create Time" Sortable>
+                    @context.CreateTime?.ToString("yyyy-MM-dd HH:mm:ss")
+                </PropertyColumn>
+                <PropertyColumn Property="c => c.EditStatus" Title="Edit Status">
+                    @switch(context.EditStatus)
+                    {
+                        case 0:
+                            <Tag Color="@("blue")">New</Tag>
+                            break;
+                        case 1:
+                            <Tag Color="@("gold")">Modified</Tag>
+                            break;
+                        case 2:
+                            <Tag Color="@("red")">Deleted</Tag>
+                            break;
+                        case 10:
+                            <Tag>Published</Tag>
+                            break;
+                        default:
+                            <Tag>Unknown</Tag>
+                            break;
+                    }
+                </PropertyColumn>
+                <PropertyColumn Property="c => c.OnlineStatus" Title="Publish Status">
+                    @if (context.OnlineStatus == 0)
+                    {
+                        <Tag Color="@("warning")">Wait Publish</Tag>
+                    }
+                    else
+                    {
+                        <Tag Color="@("processing")">Online</Tag>
+                    }
+                </PropertyColumn>
+                <ActionColumn Title="Actions">
+                    <Space>
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Link" OnClick="@(() => ShowEditModal(context))">
+                                Edit
+                            </Button>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Popconfirm Title="@($"Delete {context.Key}?")" OnConfirm="@(() => DeleteConfig(context))">
+                                <Button Type="@ButtonType.Link" Danger>Delete</Button>
+                            </Popconfirm>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Dropdown>
+                                <Overlay>
+                                    <Menu>
+                                        @if (context.EditStatus != 10)
+                                        {
+                                            <MenuItem OnClick="@(() => CancelEdit(context))">Cancel Edit</MenuItem>
+                                        }
+                                        <MenuItem OnClick="@(() => ShowHistory(context))">History</MenuItem>
+                                    </Menu>
+                                </Overlay>
+                                <ChildContent>
+                                    <Button Type="@ButtonType.Link">
+                                        <Icon Type="@IconType.Outline.Ellipsis" />
+                                    </Button>
+                                </ChildContent>
+                            </Dropdown>
+                        </SpaceItem>
+                    </Space>
+                </ActionColumn>
+            </Table>
+        </SpaceItem>
+    </Space>
+</div>
+
+<Modal Title="@(isEditMode ? "Edit Config" : "Add Config")"
+       @bind-Visible="@modalVisible"
+       OnOk="@HandleSubmit"
+       OnCancel="@(() => modalVisible = false)"
+       Width="600"
+       ConfirmLoading="@saving">
+    <Form Model="@currentConfig" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+        <ChildContent Context="formContext">
+            <FormItem Label="App">
+                <Input Value="@AppName" Disabled />
+            </FormItem>
+            <FormItem Label="Group">
+                <Input @bind-Value="@formContext.Group" Placeholder="Enter group (optional)" />
+            </FormItem>
+            <FormItem Label="Key" Required>
+                <Input @bind-Value="@formContext.Key" Placeholder="Enter key" Disabled="@isEditMode" />
+            </FormItem>
+            <FormItem Label="Value">
+                <TextArea @bind-Value="@formContext.Value" Placeholder="Enter value" Rows="4" />
+            </FormItem>
+            <FormItem Label="Description">
+                <TextArea @bind-Value="@formContext.Description" Placeholder="Enter description" Rows="2" />
+            </FormItem>
+        </ChildContent>
+    </Form>
+</Modal>
+
+<Modal Title="Publish Configurations"
+       @bind-Visible="@publishModalVisible"
+       OnOk="@HandlePublish"
+       OnCancel="@(() => publishModalVisible = false)"
+       ConfirmLoading="@publishing">
+    <p>Are you sure to publish all pending changes?</p>
+    <FormItem Label="Publish Log">
+        <TextArea @bind-Value="@publishLog" Placeholder="Enter publish log (optional, max 50 chars)" MaxLength="50" ShowCount />
+    </FormItem>
+</Modal>

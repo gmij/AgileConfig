@@ -1,0 +1,12 @@
+@inherits EnvSyncBase
+
+<Modal Title="Environment Sync"
+       @bind-Visible="@Visible"
+       OnOk="@HandleSubmit"
+       OnCancel="@HandleCancel"
+       ConfirmLoading="@saving">
+    <p>Sync configurations from <strong>@CurrentEnv</strong> to:</p>
+    <div style="margin-top: 20px;">
+        <CheckboxGroup TValue="string" Value="@selectedEnvsArray" ValueChanged="@OnEnvSelectionChanged" Options="@availableEnvs" />
+    </div>
+</Modal>

@@ -1,0 +1,85 @@
+@page "/clients"
+@attribute [Authorize]
+@inherits ClientListBase
+@using AgileConfig.Server.Apisite.Client.Models
+
+<PageTitle>Client Connections - AgileConfig</PageTitle>
+
+<div class="page-header">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Client Connections</h1>
+</div>
+
+<div class="page-content">
+    <div class="search-panel">
+        <Space Wrap Size="@("16")">
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Client ID</span>
+                    <Input @bind-Value="@searchModel.Id" Placeholder="Search by client ID" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">App ID</span>
+                    <Input @bind-Value="@searchModel.AppId" Placeholder="Search by app ID" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Name</span>
+                    <Input @bind-Value="@searchModel.Name" Placeholder="Search by name" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Status</span>
+                    <Select TItemValue="string"
+                            TItem="string"
+                            @bind-Value="@searchModel.Status"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Online")" Label="Online" />
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Offline")" Label="Offline" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="display: flex; align-items: flex-end; height: 100%;">
+                    <Space Style="margin-top: 22px;">
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Button OnClick="@HandleReset">Reset</Button>
+                        </SpaceItem>
+                    </Space>
+                </div>
+            </SpaceItem>
+        </Space>
+    </div>
+    <Table TItem="ClientInfo"
+           DataSource="@filteredClients"
+           Loading="@loading">
+        <PropertyColumn Property="c => c.Id" Title="Client ID" />
+        <PropertyColumn Property="c => c.AppId" Title="App ID" />
+        <PropertyColumn Property="c => c.Name" Title="Name" />
+        <PropertyColumn Property="c => c.Ip" Title="IP Address" />
+        <PropertyColumn Property="c => c.Tag" Title="Tag">
+            <Tag>@context.Tag</Tag>
+        </PropertyColumn>
+        <PropertyColumn Property="c => c.Status" Title="Status">
+            @if (context.Status == "Online")
+            {
+                <Badge Status="@BadgeStatus.Success" Text="Online" />
+            }
+            else
+            {
+                <Badge Status="@BadgeStatus.Default" Text="Offline" />
+            }
+        </PropertyColumn>
+        <PropertyColumn Property="c => c.LastHeartbeatTime" Title="Last Heartbeat">
+            @context.LastHeartbeatTime?.ToString("yyyy-MM-dd HH:mm:ss")
+        </PropertyColumn>
+    </Table>
+</div>

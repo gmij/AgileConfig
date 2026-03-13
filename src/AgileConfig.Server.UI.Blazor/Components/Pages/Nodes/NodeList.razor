@@ -1,0 +1,103 @@
+@page "/nodes"
+@attribute [Authorize]
+@inherits NodeListBase
+@using AgileConfig.Server.Apisite.Client.Models
+
+<PageTitle>Server Nodes - AgileConfig</PageTitle>
+
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Server Node Management</h1>
+        <Button Type="@ButtonType.Primary" Icon="@IconType.Outline.Plus" OnClick="@ShowAddModal">
+            Add Node
+        </Button>
+    </div>
+</div>
+
+<div class="page-content">
+    <div class="search-panel">
+        <Space Wrap Size="@("16")">
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Address</span>
+                    <Input @bind-Value="@searchModel.Address" Placeholder="Search by address" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Status</span>
+                    <Select TItemValue="int?"
+                            TItem="string"
+                            @bind-Value="@searchModel.Status"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="int?" TItem="string" Value="@(1)" Label="Online" />
+                        <SelectOption TItemValue="int?" TItem="string" Value="@(0)" Label="Offline" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="display: flex; align-items: flex-end; height: 100%;">
+                    <Space Style="margin-top: 22px;">
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Button OnClick="@HandleReset">Reset</Button>
+                        </SpaceItem>
+                    </Space>
+                </div>
+            </SpaceItem>
+        </Space>
+    </div>
+
+    <Table TItem="ServerNodeInfo"
+           DataSource="@filteredNodes"
+           Loading="@loading">
+        <PropertyColumn Property="n => n.Address" Title="Address" />
+        <PropertyColumn Property="n => n.Remark" Title="Remark" />
+        <PropertyColumn Property="n => n.Status" Title="Status">
+            @if (context.Status == 1)
+            {
+                <Badge Status="@BadgeStatus.Success" Text="Online" />
+            }
+            else
+            {
+                <Badge Status="@BadgeStatus.Default" Text="Offline" />
+            }
+        </PropertyColumn>
+        <PropertyColumn Property="n => n.LastEchoTime" Title="Last Heartbeat">
+            @context.LastEchoTime?.ToString("yyyy-MM-dd HH:mm:ss")
+        </PropertyColumn>
+        <ActionColumn Title="Actions">
+            <Space>
+                <SpaceItem>
+                    <Popconfirm Title="@($"Delete node {context.Address}?")" OnConfirm="@(() => DeleteNode(context))">
+                        <Button Type="@ButtonType.Link" Danger>Delete</Button>
+                    </Popconfirm>
+                </SpaceItem>
+            </Space>
+        </ActionColumn>
+    </Table>
+</div>
+
+<Modal Title="@(isEditMode ? "Edit Node" : "Add Node")"
+       @bind-Visible="@modalVisible"
+       OnOk="@HandleSubmit"
+       OnCancel="@(() => modalVisible = false)"
+       ConfirmLoading="@saving">
+    <Form Model="@currentNode" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+        <ChildContent Context="formContext">
+            <FormItem Label="Address" Required>
+                <Input @bind-Value="@formContext.Address" Placeholder="http://localhost:5000" />
+            </FormItem>
+            <FormItem Label="Remark">
+                <TextArea @bind-Value="@formContext.Remark" Placeholder="Enter remark" Rows="3" />
+            </FormItem>
+            <FormItem Label="Status">
+                <Switch @bind-Checked="@statusChecked" CheckedChildren="Online" UnCheckedChildren="Offline" />
+            </FormItem>
+        </ChildContent>
+    </Form>
+</Modal>

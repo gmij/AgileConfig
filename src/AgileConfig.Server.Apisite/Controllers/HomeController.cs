@@ -36,8 +36,24 @@ public class HomeController : Controller
         if (!Appsettings.IsAdminConsoleMode)
             return Content($"AgileConfig Node is running now , {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} .");
 
-        if (!_systemInitializationService.HasSa()) return Redirect(Request.PathBase + "/ui#/user/initpassword");
+        // Check if Blazor UI URL is configured
+        var blazorUiUrl = Appsettings.GetBlazorUiUrl();
 
+        if (!_systemInitializationService.HasSa())
+        {
+            // Redirect to Blazor UI's initpassword page if configured, otherwise to the legacy UI route
+            if (!string.IsNullOrEmpty(blazorUiUrl))
+            {
+                return Redirect($"{blazorUiUrl}/initpassword");
+            }
+            return Redirect(Request.PathBase + "/ui#/user/initpassword");
+        }
+
+        // Redirect to Blazor UI home if configured, otherwise to legacy UI
+        if (!string.IsNullOrEmpty(blazorUiUrl))
+        {
+            return Redirect(blazorUiUrl);
+        }
         return Redirect(Request.PathBase + "/ui");
     }
 

@@ -1,0 +1,159 @@
+﻿@page "/"
+@attribute [Authorize]
+@inherits HomeBase
+@using AgileConfig.Server.Apisite.Client.Models
+
+<PageTitle>Home - AgileConfig</PageTitle>
+
+<div class="page-header">
+    <h1>Dashboard</h1>
+</div>
+
+<div class="page-content">
+    <Space Direction="@SpaceDirection.Vertical" Size="@("large")" Style="width: 100%;">
+        <SpaceItem>
+            <Row Gutter="16">
+                <AntDesign.Col Span="6">
+                    <Card>
+                        <Statistic TValue="int"
+                                  Title="Applications"
+                                  Value="@statistics.AppCount">
+                            <PrefixTemplate>
+                                <Icon Type="@IconType.Outline.AppstoreAdd" Style="color: #1890ff;" />
+                            </PrefixTemplate>
+                        </Statistic>
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="6">
+                    <Card>
+                        <Statistic TValue="int"
+                                  Title="Configurations"
+                                  Value="@statistics.ConfigCount">
+                            <PrefixTemplate>
+                                <Icon Type="@IconType.Outline.Setting" Style="color: #1890ff;" />
+                            </PrefixTemplate>
+                        </Statistic>
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="6">
+                    <Card>
+                        <Statistic TValue="string"
+                                  Title="Server Nodes"
+                                  Value="@GetNodeValueText()">
+                            <PrefixTemplate>
+                                <Icon Type="@IconType.Outline.Cluster" Style="color: #1890ff;" />
+                            </PrefixTemplate>
+                        </Statistic>
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="6">
+                    <Card>
+                        <Statistic TValue="int"
+                                  Title="Connected Clients"
+                                  Value="@statistics.ServiceCount">
+                            <PrefixTemplate>
+                                <Icon Type="@IconType.Outline.Api" Style="color: #1890ff;" />
+                            </PrefixTemplate>
+                        </Statistic>
+                    </Card>
+                </AntDesign.Col>
+            </Row>
+        </SpaceItem>
+
+        <SpaceItem>
+            <Card Title="Recently Visited Applications">
+                @if (recentApps.Any())
+                {
+                    @foreach (var app in recentApps)
+                    {
+                        <div class="app-list-item">
+                            <div class="app-avatar">
+                                <Avatar Icon="@IconType.Outline.AppstoreAdd" />
+                            </div>
+                            <div class="app-info">
+                                <div class="app-title">
+                                    <a @onclick="() => NavigateToConfigs(app)" class="app-link">
+                                        @app.Name
+                                    </a>
+                                </div>
+                                <div class="app-description">
+                                    <Text Type="@TextElementType.Secondary">ID: @app.Id</Text>
+                                    @if (!string.IsNullOrEmpty(app.Group))
+                                    {
+                                        <Tag>@app.Group</Tag>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <Empty Description="@("No recently visited applications")" />
+                }
+            </Card>
+        </SpaceItem>
+
+        <SpaceItem>
+            <Row Gutter="16">
+                <AntDesign.Col Span="12">
+                    <Card Title="Server Nodes Status" Loading="@loading">
+                        @if (serverNodes.Any())
+                        {
+                            <Table TItem="ServerNodeInfo"
+                                   DataSource="@serverNodes"
+                                   Size="@TableSize.Small"
+                                   HidePagination>
+                                <PropertyColumn Property="n => n.Address" Title="Address" />
+                                <PropertyColumn Property="n => n.Status" Title="Status">
+                                    @if (context.Status == 1)
+                                    {
+                                        <Badge Status="@BadgeStatus.Success" Text="Online" />
+                                    }
+                                    else
+                                    {
+                                        <Badge Status="@BadgeStatus.Default" Text="Offline" />
+                                    }
+                                </PropertyColumn>
+                                <PropertyColumn Property="n => n.LastEchoTime" Title="Last Heartbeat">
+                                    @context.LastEchoTime?.ToString("yyyy-MM-dd HH:mm:ss")
+                                </PropertyColumn>
+                            </Table>
+                        }
+                        else
+                        {
+                            <Empty Description="@("No server nodes")" />
+                        }
+                    </Card>
+                </AntDesign.Col>
+                <AntDesign.Col Span="12">
+                    <Card Title="Recent Activities" Loading="@loading">
+                        @if (recentLogs.Any())
+                        {
+                            <Timeline>
+                                @foreach (var log in recentLogs)
+                                {
+                                    <TimelineItem Color="@("blue")">
+                                        <div>
+                                            <Text Strong>@log.LogType</Text>
+                                            <br />
+                                            <Text Type="@TextElementType.Secondary" Style="font-size: 12px;">
+                                                @log.LogTime
+                                            </Text>
+                                            <br />
+                                            <Text>@log.LogText</Text>
+                                        </div>
+                                    </TimelineItem>
+                                }
+                            </Timeline>
+                        }
+                        else
+                        {
+                            <Empty Description="@("No recent activities")" />
+                        }
+                    </Card>
+                </AntDesign.Col>
+            </Row>
+        </SpaceItem>
+    </Space>
+</div>

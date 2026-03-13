@@ -1,0 +1,29 @@
+@using AgileConfig.Server.UI.Blazor.Models
+@inherits UpdateFormBase
+
+<Modal Title="@(IsEditMode ? "Edit Config" : "Add Config")"
+       @bind-Visible="@Visible"
+       OnOk="@HandleSubmit"
+       OnCancel="@HandleCancel"
+       Width="600"
+       ConfirmLoading="@saving">
+    <Form Model="@Model" LabelCol="new ColLayoutParam { Span = 6 }" WrapperCol="new ColLayoutParam { Span = 18 }">
+        <ChildContent Context="formContext">
+            <FormItem Label="App">
+                <Input Value="@AppName" Disabled />
+            </FormItem>
+            <FormItem Label="Group">
+                <Input @bind-Value="@formContext.Group" Placeholder="Enter group (optional)" />
+            </FormItem>
+            <FormItem Label="Key" Required>
+                <Input @bind-Value="@formContext.Key" Placeholder="Enter key" Disabled="@IsEditMode" />
+            </FormItem>
+            <FormItem Label="Value">
+                <TextArea @bind-Value="@formContext.Value" Placeholder="Enter value" MinRows="3" MaxRows="12" />
+            </FormItem>
+            <FormItem Label="Description">
+                <TextArea @bind-Value="@formContext.Description" Placeholder="Enter description" Rows="2" />
+            </FormItem>
+        </ChildContent>
+    </Form>
+</Modal>

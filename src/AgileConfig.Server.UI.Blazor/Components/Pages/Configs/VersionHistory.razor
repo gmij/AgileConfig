@@ -1,0 +1,73 @@
+@using AgileConfig.Server.Apisite.Client.Models
+@inherits VersionHistoryBase
+
+<Modal Title="Version History"
+       @bind-Visible="@Visible"
+       OnCancel="@HandleCancel"
+       Width="1000"
+       Footer="null">
+    <div class="history-container">
+        @if (!historyData.Any())
+        {
+            <Empty Description="@("No version history")" />
+        }
+        else
+        {
+            @foreach (var (publishNode, index) in historyData.Select((item, i) => (item, i)))
+            {
+                <div key="@publishNode.TimelineNode.Id" class="history-version-table">
+                    <Table TItem="ConfigInfo"
+                           DataSource="@publishNode.List"
+                           Size="@TableSize.Small"
+                           HidePagination>
+                        <TitleTemplate>
+                            <div>
+                                <span>@publishNode.TimelineNode.PublishTime?.ToString("yyyy-MM-dd HH:mm:ss") / @publishNode.TimelineNode.PublishUserName</span>
+                                @if (index == 0)
+                                {
+                                    <Tag Style="margin-left: 10px;">Current</Tag>
+                                }
+                                <div style="color: #8c8c8c; margin-top: 8px;">
+                                    @publishNode.TimelineNode.Log
+                                </div>
+                            </div>
+                        </TitleTemplate>
+                        <ChildContent>
+                            <PropertyColumn Property="c => c.Group" Title="Group" Ellipsis />
+                            <PropertyColumn Property="c => c.Key" Title="Key" Ellipsis />
+                            <PropertyColumn Property="c => c.Value" Title="Value" Ellipsis />
+                            <PropertyColumn Property="c => c.EditStatus" Title="Status">
+                                @switch(context.EditStatus)
+                                {
+                                    case 0:
+                                        <Tag Color="@("blue")">Add</Tag>
+                                        break;
+                                    case 1:
+                                        <Tag Color="@("gold")">Edit</Tag>
+                                        break;
+                                    case 2:
+                                        <Tag Color="@("red")">Delete</Tag>
+                                        break;
+                                    case 10:
+                                        <Tag>Committed</Tag>
+                                        break;
+                                    default:
+                                        <Tag>Unknown</Tag>
+                                        break;
+                                }
+                            </PropertyColumn>
+                        </ChildContent>
+                    </Table>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <Button Type="@ButtonType.Primary"
+                                Style="margin-top: 20px;"
+                                Hidden="@(index == 0)"
+                                OnClick="@(() => ShowRollbackConfirm(publishNode))">
+                            Rollback
+                        </Button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</Modal>

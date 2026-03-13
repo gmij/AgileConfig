@@ -1,0 +1,84 @@
+@page "/services"
+@attribute [Authorize]
+@inherits ServiceListBase
+@using AgileConfig.Server.Apisite.Client.Models
+
+<PageTitle>Services - AgileConfig</PageTitle>
+
+<div class="page-header">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 600;">Service Registry</h1>
+</div>
+
+<div class="page-content">
+    <div class="search-panel">
+        <Space Wrap Size="@("16")">
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Service ID</span>
+                    <Input @bind-Value="@searchModel.ServiceId" Placeholder="Search by service ID" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Service Name</span>
+                    <Input @bind-Value="@searchModel.ServiceName" Placeholder="Search by service name" />
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="min-width: 200px;">
+                    <span class="search-label">Status</span>
+                    <Select TItemValue="string"
+                            TItem="string"
+                            @bind-Value="@searchModel.Status"
+                            Placeholder="All"
+                            AllowClear
+                            Style="width: 100%;">
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Healthy")" Label="Healthy" />
+                        <SelectOption TItemValue="string" TItem="string" Value="@("Unhealthy")" Label="Unhealthy" />
+                    </Select>
+                </div>
+            </SpaceItem>
+            <SpaceItem>
+                <div style="display: flex; align-items: flex-end; height: 100%;">
+                    <Space Style="margin-top: 22px;">
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" OnClick="@HandleSearch">Search</Button>
+                        </SpaceItem>
+                        <SpaceItem>
+                            <Button OnClick="@HandleReset">Reset</Button>
+                        </SpaceItem>
+                    </Space>
+                </div>
+            </SpaceItem>
+        </Space>
+    </div>
+    <Table TItem="ServiceInfo"
+           DataSource="@filteredServices"
+           Loading="@loading">
+        <PropertyColumn Property="s => s.ServiceId" Title="Service ID" />
+        <PropertyColumn Property="s => s.ServiceName" Title="Service Name" />
+        <PropertyColumn Property="s => s.Ip" Title="IP Address" />
+        <PropertyColumn Property="s => s.Port" Title="Port" />
+        <PropertyColumn Property="s => s.Status" Title="Status">
+            @if (context.Status == 0)
+            {
+                <Badge Status="@BadgeStatus.Success" Text="Healthy" />
+            }
+            else
+            {
+                <Badge Status="@BadgeStatus.Error" Text="Unhealthy" />
+            }
+        </PropertyColumn>
+        <PropertyColumn Property="s => s.RegisterTime" Title="Register Time">
+            @context.RegisterTime?.ToString("yyyy-MM-dd HH:mm:ss")
+        </PropertyColumn>
+        <PropertyColumn Property="s => s.LastHeartBeat" Title="Last Heartbeat">
+            @context.LastHeartBeat?.ToString("yyyy-MM-dd HH:mm:ss")
+        </PropertyColumn>
+        <ActionColumn Title="Actions">
+            <Popconfirm Title="@($"Unregister service {context.ServiceName}?")" OnConfirm="@(() => UnregisterService(context))">
+                <Button Type="@ButtonType.Link" Danger>Unregister</Button>
+            </Popconfirm>
+        </ActionColumn>
+    </Table>
+</div>

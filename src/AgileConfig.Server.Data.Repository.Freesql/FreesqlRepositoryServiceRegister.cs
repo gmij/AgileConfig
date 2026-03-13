@@ -40,8 +40,7 @@ public class FreesqlRepositoryServiceRegister : IRepositoryServiceRegister
 
     public bool IsSuit4Provider(string provider)
     {
-        var freesqlType = MyFreeSQL.ProviderToFreesqlDbType(provider);
-
-        return freesqlType.HasValue;
+        // Check if ORM provider is "freesql"
+        return provider.Equals("freesql", StringComparison.OrdinalIgnoreCase);
     }
 }
