@@ -11,14 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AgileConfig.Server.Data.EFCore.Migrations
 {
     [DbContext(typeof(AgileConfigDbContext))]
-    [Migration("20260311093621_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260313073333_V1_10_Baseline")]
+    partial class V1_10_Baseline
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.1");
 
             modelBuilder.Entity("AgileConfig.Server.Data.Entity.App", b =>
                 {
@@ -472,7 +472,7 @@ namespace AgileConfig.Server.Data.EFCore.Migrations
                         new
                         {
                             Id = "001",
-                            CreateTime = new DateTime(2026, 3, 11, 9, 36, 20, 708, DateTimeKind.Local).AddTicks(5147),
+                            CreateTime = new DateTime(2026, 3, 11, 9, 36, 21, 0, DateTimeKind.Utc),
                             Description = "System Administrator",
                             IsSystem = true,
                             Name = "Administrator"
@@ -480,7 +480,7 @@ namespace AgileConfig.Server.Data.EFCore.Migrations
                         new
                         {
                             Id = "002",
-                            CreateTime = new DateTime(2026, 3, 11, 9, 36, 20, 708, DateTimeKind.Local).AddTicks(5436),
+                            CreateTime = new DateTime(2026, 3, 11, 9, 36, 21, 0, DateTimeKind.Utc),
                             Description = "System Operator",
                             IsSystem = true,
                             Name = "Operator"
@@ -515,98 +515,98 @@ namespace AgileConfig.Server.Data.EFCore.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "6c7ed036-1eb7-407c-a897-2d1a3bc8c9d2",
+                            Id = "rf-001",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "001",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "fdd8ff78-c875-45ee-b881-11da11b46f39",
+                            Id = "rf-002",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "002",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "9fa97f7d-6806-4d58-9981-1d0801bbae4b",
+                            Id = "rf-003",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "003",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "b0c2f626-6d12-40fd-930d-d5fe0c3bbd56",
+                            Id = "rf-004",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "004",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "6e2b69ca-3d9b-44db-b2df-6c818257a83f",
+                            Id = "rf-005",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "005",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "409e3398-def2-4132-92f3-700ff7448b04",
+                            Id = "rf-006",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "006",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "5bb6742b-8952-488c-b5ae-e69aef018867",
+                            Id = "rf-007",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "007",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "e56a2262-504d-42a0-beb0-76bff86dfe7e",
+                            Id = "rf-008",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "008",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "595cd020-0c55-46e7-8a81-811a3451b32b",
+                            Id = "rf-009",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "009",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "08ed390e-ba8e-421b-a73d-35899646ba2b",
+                            Id = "rf-010",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "010",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "4be2fe80-047b-4e27-b4c4-0351e483668a",
+                            Id = "rf-011",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "011",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "446cb7b4-99b5-4f0d-818b-a980629dfb3a",
+                            Id = "rf-012",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "012",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "4cfc7e2e-9138-4ae9-a529-beaf0fcf96e1",
+                            Id = "rf-013",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "013",
                             RoleId = "001"
                         },
                         new
                         {
-                            Id = "b913970b-81e1-4198-905b-d852de1a5057",
+                            Id = "rf-014",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FunctionId = "014",
                             RoleId = "001"
@@ -786,9 +786,9 @@ namespace AgileConfig.Server.Data.EFCore.Migrations
                         new
                         {
                             Id = "admin",
-                            CreateTime = new DateTime(2026, 3, 11, 9, 36, 20, 706, DateTimeKind.Local).AddTicks(5170),
-                            Password = "s7+8OVBvDjrupqv0jjamNQL9sszewpyqEv9cXnoJPfs=",
-                            Salt = "66941967e7ac4e74b0d87a8b4439fe73",
+                            CreateTime = new DateTime(2026, 3, 11, 9, 36, 21, 0, DateTimeKind.Utc),
+                            Password = "pRfB26KYvaoEaPRHsdjHYX8zSncNx3NN8Avz3T6JbO0=",
+                            Salt = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
                             Source = 0,
                             Status = 0,
                             Team = "",
@@ -849,7 +849,7 @@ namespace AgileConfig.Server.Data.EFCore.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "3c13991d-c648-43e0-8323-e723242cc28e",
+                            Id = "admin-role-001",
                             CreateTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             RoleId = "001",
                             UserId = "admin"

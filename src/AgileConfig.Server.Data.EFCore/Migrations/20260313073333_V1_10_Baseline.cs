@@ -8,7 +8,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AgileConfig.Server.Data.EFCore.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    /// <summary>
+    /// Version 1.10 Baseline Migration
+    /// This migration represents the initial database schema for AgileConfig v1.10.
+    /// It includes all core tables and seed data for admin user, roles, and permissions.
+    /// </summary>
+    public partial class V1_10_Baseline : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -315,8 +320,8 @@ namespace AgileConfig.Server.Data.EFCore.Migrations
                 columns: new[] { "Id", "CreateTime", "Description", "IsSystem", "Name", "UpdateTime" },
                 values: new object[,]
                 {
-                    { "001", new DateTime(2026, 3, 11, 9, 36, 20, 708, DateTimeKind.Local).AddTicks(5147), "System Administrator", true, "Administrator", null },
-                    { "002", new DateTime(2026, 3, 11, 9, 36, 20, 708, DateTimeKind.Local).AddTicks(5436), "System Operator", true, "Operator", null }
+                    { "001", new DateTime(2026, 3, 11, 9, 36, 21, 0, DateTimeKind.Utc), "System Administrator", true, "Administrator", null },
+                    { "002", new DateTime(2026, 3, 11, 9, 36, 21, 0, DateTimeKind.Utc), "System Operator", true, "Operator", null }
                 });
 
             migrationBuilder.InsertData(
@@ -324,31 +329,31 @@ namespace AgileConfig.Server.Data.EFCore.Migrations
                 columns: new[] { "Id", "CreateTime", "FunctionId", "RoleId" },
                 values: new object[,]
                 {
-                    { "08ed390e-ba8e-421b-a73d-35899646ba2b", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "010", "001" },
-                    { "409e3398-def2-4132-92f3-700ff7448b04", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "006", "001" },
-                    { "446cb7b4-99b5-4f0d-818b-a980629dfb3a", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "012", "001" },
-                    { "4be2fe80-047b-4e27-b4c4-0351e483668a", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "011", "001" },
-                    { "4cfc7e2e-9138-4ae9-a529-beaf0fcf96e1", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "013", "001" },
-                    { "595cd020-0c55-46e7-8a81-811a3451b32b", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "009", "001" },
-                    { "5bb6742b-8952-488c-b5ae-e69aef018867", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "007", "001" },
-                    { "6c7ed036-1eb7-407c-a897-2d1a3bc8c9d2", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "001", "001" },
-                    { "6e2b69ca-3d9b-44db-b2df-6c818257a83f", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "005", "001" },
-                    { "9fa97f7d-6806-4d58-9981-1d0801bbae4b", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "003", "001" },
-                    { "b0c2f626-6d12-40fd-930d-d5fe0c3bbd56", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "004", "001" },
-                    { "b913970b-81e1-4198-905b-d852de1a5057", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "014", "001" },
-                    { "e56a2262-504d-42a0-beb0-76bff86dfe7e", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "008", "001" },
-                    { "fdd8ff78-c875-45ee-b881-11da11b46f39", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "002", "001" }
+                    { "rf-001", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "001", "001" },
+                    { "rf-002", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "002", "001" },
+                    { "rf-003", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "003", "001" },
+                    { "rf-004", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "004", "001" },
+                    { "rf-005", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "005", "001" },
+                    { "rf-006", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "006", "001" },
+                    { "rf-007", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "007", "001" },
+                    { "rf-008", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "008", "001" },
+                    { "rf-009", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "009", "001" },
+                    { "rf-010", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "010", "001" },
+                    { "rf-011", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "011", "001" },
+                    { "rf-012", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "012", "001" },
+                    { "rf-013", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "013", "001" },
+                    { "rf-014", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "014", "001" }
                 });
 
             migrationBuilder.InsertData(
                 table: "agc_user",
                 columns: new[] { "Id", "CreateTime", "Password", "Salt", "Source", "Status", "Team", "UpdateTime", "UserName" },
-                values: new object[] { "admin", new DateTime(2026, 3, 11, 9, 36, 20, 706, DateTimeKind.Local).AddTicks(5170), "s7+8OVBvDjrupqv0jjamNQL9sszewpyqEv9cXnoJPfs=", "66941967e7ac4e74b0d87a8b4439fe73", 0, 0, "", null, "admin" });
+                values: new object[] { "admin", new DateTime(2026, 3, 11, 9, 36, 21, 0, DateTimeKind.Utc), "pRfB26KYvaoEaPRHsdjHYX8zSncNx3NN8Avz3T6JbO0=", "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6", 0, 0, "", null, "admin" });
 
             migrationBuilder.InsertData(
                 table: "agc_user_role",
                 columns: new[] { "Id", "CreateTime", "RoleId", "UserId" },
-                values: new object[] { "3c13991d-c648-43e0-8323-e723242cc28e", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "001", "admin" });
+                values: new object[] { "admin-role-001", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "001", "admin" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_agc_app_Name",

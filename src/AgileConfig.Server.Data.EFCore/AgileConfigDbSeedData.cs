@@ -5,20 +5,24 @@ namespace AgileConfig.Server.Data.EFCore;
 
 public static class AgileConfigDbSeedData
 {
+    // Use fixed values for seed data to avoid non-deterministic model changes
+    private static readonly DateTime SeedDataTimestamp = new DateTime(2026, 3, 11, 9, 36, 21, DateTimeKind.Utc);
+    private static readonly string AdminSalt = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6";
+    private static readonly string AdminUserRoleId = "admin-role-001";
+
     public static void SeedData(ModelBuilder modelBuilder)
     {
         // Seed default admin user
         var adminId = "admin";
-        var adminSalt = Guid.NewGuid().ToString("N");
-        var adminPassword = GeneratePasswordHash("123456", adminSalt);
+        var adminPassword = GeneratePasswordHash("123456", AdminSalt);
 
         modelBuilder.Entity<User>().HasData(new User
         {
             Id = adminId,
             UserName = "admin",
             Password = adminPassword,
-            Salt = adminSalt,
-            CreateTime = DateTime.Now,
+            Salt = AdminSalt,
+            CreateTime = SeedDataTimestamp,
             Status = UserStatus.Normal,
             Source = UserSource.Normal,
             Team = ""
@@ -35,7 +39,7 @@ public static class AgileConfigDbSeedData
                 Name = "Administrator",
                 Description = "System Administrator",
                 IsSystem = true,
-                CreateTime = DateTime.Now
+                CreateTime = SeedDataTimestamp
             },
             new Role
             {
@@ -43,14 +47,14 @@ public static class AgileConfigDbSeedData
                 Name = "Operator",
                 Description = "System Operator",
                 IsSystem = true,
-                CreateTime = DateTime.Now
+                CreateTime = SeedDataTimestamp
             }
         );
 
         // Seed user-role mapping
         modelBuilder.Entity<UserRole>().HasData(new UserRole
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = AdminUserRoleId,
             UserId = adminId,
             RoleId = adminRoleId
         });
@@ -75,13 +79,24 @@ public static class AgileConfigDbSeedData
         };
         modelBuilder.Entity<Function>().HasData(functions);
 
-        // Seed role-function mappings for admin
-        var roleFunctions = functions.Select(f => new RoleFunction
+        // Seed role-function mappings for admin with static IDs
+        var roleFunctions = new[]
         {
-            Id = Guid.NewGuid().ToString(),
-            RoleId = adminRoleId,
-            FunctionId = f.Id
-        }).ToArray();
+            new RoleFunction { Id = "rf-001", RoleId = adminRoleId, FunctionId = "001" },
+            new RoleFunction { Id = "rf-002", RoleId = adminRoleId, FunctionId = "002" },
+            new RoleFunction { Id = "rf-003", RoleId = adminRoleId, FunctionId = "003" },
+            new RoleFunction { Id = "rf-004", RoleId = adminRoleId, FunctionId = "004" },
+            new RoleFunction { Id = "rf-005", RoleId = adminRoleId, FunctionId = "005" },
+            new RoleFunction { Id = "rf-006", RoleId = adminRoleId, FunctionId = "006" },
+            new RoleFunction { Id = "rf-007", RoleId = adminRoleId, FunctionId = "007" },
+            new RoleFunction { Id = "rf-008", RoleId = adminRoleId, FunctionId = "008" },
+            new RoleFunction { Id = "rf-009", RoleId = adminRoleId, FunctionId = "009" },
+            new RoleFunction { Id = "rf-010", RoleId = adminRoleId, FunctionId = "010" },
+            new RoleFunction { Id = "rf-011", RoleId = adminRoleId, FunctionId = "011" },
+            new RoleFunction { Id = "rf-012", RoleId = adminRoleId, FunctionId = "012" },
+            new RoleFunction { Id = "rf-013", RoleId = adminRoleId, FunctionId = "013" },
+            new RoleFunction { Id = "rf-014", RoleId = adminRoleId, FunctionId = "014" }
+        };
         modelBuilder.Entity<RoleFunction>().HasData(roleFunctions);
     }
 
